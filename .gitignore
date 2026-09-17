@@ -1,0 +1,35 @@
+# Environments / IDE
+.venv/
+.venv311/
+__pycache__/
+*.py[cod]
+.cursor/
+.cursor-plugin/
+.opencode/
+.vscode/
+.understand-anything/
+
+# Datasets and extracted features (too large for GitHub)
+data/
+data2/
+weibo22/
+weibo/nonrumor_images/
+weibo/rumor_images/
+weibo/*.pkl
+weibo/*.rar
+Weibo_21/
+param_model/
+pretrained_model/
+src/pretrained_model/
+src/mae_pretrain_vit_base.pth
+src/mae_pretrain_vit_base.pth.bak
+*.pkl
+*.pth
+*.pt
+*.bin
+*.rar
+
+# Local logs / caches
+*.log
+.ipynb_checkpoints/
+src/.cache/

@@ -1,0 +1,133 @@
+{
+  "events_file": {
+    "n_events": 4664,
+    "label_counts": {
+      "0": 2351,
+      "1": 2313
+    },
+    "ids_per_event": {
+      "n": 4664,
+      "min": 10.0,
+      "p25": 117.0,
+      "median": 248.0,
+      "p75": 615.0,
+      "p90": 1454.3999999999996,
+      "max": 59318.0,
+      "mean": 815.9639794168096
+    }
+  },
+  "cascades": {
+    "n_json_files": 4664,
+    "json_errors": 0,
+    "empty": 0,
+    "n_cascades_ok": 4664,
+    "labeled": 4664,
+    "unlabeled": 0,
+    "label_counts": {
+      "0": 2351,
+      "1": 2313
+    },
+    "total_nodes": 3805656,
+    "total_edges": 3800992,
+    "total_unique_uids": 2856741,
+    "total_pictures_fields": 3852,
+    "cascades_with_any_picture": 3851,
+    "nodes": {
+      "n": 4664,
+      "min": 10.0,
+      "p25": 117.0,
+      "median": 248.0,
+      "p75": 615.0,
+      "p90": 1454.3999999999996,
+      "max": 59318.0,
+      "mean": 815.9639794168096
+    },
+    "edges": {
+      "n": 4664,
+      "min": 9.0,
+      "p25": 116.0,
+      "median": 247.0,
+      "p75": 614.0,
+      "p90": 1453.3999999999996,
+      "max": 59317.0,
+      "mean": 814.9639794168096
+    },
+    "unique_uids_per_cascade": {
+      "n": 4664,
+      "min": 6.0,
+      "p25": 114.0,
+      "median": 239.0,
+      "p75": 594.25,
+      "p90": 1425.0,
+      "max": 57186.0,
+      "mean": 792.6670240137221
+    },
+    "span_hours": {
+      "n": 4664,
+      "min": 0.024444444444444446,
+      "p25": 135.70222222222225,
+      "median": 520.8729166666667,
+      "p75": 1418.9258333333335,
+      "p90": 5452.796555555556,
+      "max": 34312.27861111111,
+      "mean": 1811.1153008266629
+    },
+    "pictures_per_cascade": {
+      "n": 4664,
+      "min": 0.0,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0,
+      "p90": 1.0,
+      "max": 2.0,
+      "mean": 0.8259005145797599
+    },
+    "size_buckets": {
+      "lt50": 326,
+      "50_199": 1692,
+      "200_999": 1921,
+      "1000_4999": 603,
+      "ge5000": 122
+    },
+    "span_buckets_hours": {
+      "lt1h": 128,
+      "1_24h": 320,
+      "1_7d": 892,
+      "ge7d": 3324
+    }
+  },
+  "overlap": {
+    "data": {
+      "dammfnd_rows": 7723,
+      "dammfnd_id_tokens": 52,
+      "root_id_overlap": 0,
+      "any_node_id_overlap": 0,
+      "root_text80_overlap": 1,
+      "root_prefix12_20_hit": 1070
+    },
+    "weibo_raw": {
+      "dammfnd_rows": 7723,
+      "dammfnd_id_tokens": 52,
+      "root_id_overlap": 0,
+      "any_node_id_overlap": 0,
+      "root_text80_overlap": 1
+    },
+    "weibo_aligned": {
+      "dammfnd_rows": 3783,
+      "dammfnd_id_tokens": 50,
+      "root_id_overlap": 0,
+      "any_node_id_overlap": 0,
+      "root_text80_overlap": 1
+    },
+    "text_prefix12_20": {
+      "root_hit": 1070,
+      "cascades": 4664,
+      "note": "文案模板相似，非同一 mid；不能搬 pkl。"
+    }
+  },
+  "notes": {
+    "label_convention": "events.txt label:0/1，未在本脚本中改写含义；Ma et al. Weibo 谣言级联里通常 0=非谣言、1=谣言，需对照论文确认。",
+    "picture_field": "统计 JSON 的 picture 字段非空；多数转发节点无图。",
+    "id_overlap_caveat": "DAMMFND CSV 的 post_id 常为 float/科学计数法，16 位 mid 可能丢失精度，ID 交集偏低时以文本前 80 字交集为辅。"
+  }
+}
