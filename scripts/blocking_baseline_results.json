@@ -1,0 +1,1389 @@
+{
+  "protocol": {
+    "min_future": 20,
+    "k": [
+      1,
+      5,
+      10
+    ],
+    "windows": [
+      "time:1h",
+      "time:6h",
+      "time:24h",
+      "prefix:20",
+      "prefix:50"
+    ],
+    "strategies": [
+      "random",
+      "earliest",
+      "followers",
+      "outdegree_obs",
+      "greedy_oracle"
+    ],
+    "seed": 3074,
+    "metric": "block_rate = covered_future_nodes / future_nodes",
+    "action_space": "observed nodes excluding the cascade root"
+  },
+  "windows": {
+    "time:1h": {
+      "n_eligible": 4203,
+      "n_rumor": 2065,
+      "n_nonrumor": 2138,
+      "mean_observed": 183.85201046871282,
+      "mean_future": 699.5196288365453,
+      "median_observed": 85.0,
+      "median_future": 172.0,
+      "k": {
+        "1": {
+          "random": {
+            "all": {
+              "n": 4203,
+              "mean": 0.0059,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.0109,
+              "median": 0.0007
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0011,
+              "median": 0.0
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 4203,
+              "mean": 0.0117,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.0214,
+              "median": 0.0
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0024,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 4203,
+              "mean": 0.0431,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.0531,
+              "median": 0.0006
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0335,
+              "median": 0.0
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 4203,
+              "mean": 0.053,
+              "median": 0.0023
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.069,
+              "median": 0.0079
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0376,
+              "median": 0.0
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 4203,
+              "mean": 0.0791,
+              "median": 0.023
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.1029,
+              "median": 0.0381
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0561,
+              "median": 0.0143
+            }
+          }
+        },
+        "5": {
+          "random": {
+            "all": {
+              "n": 4203,
+              "mean": 0.022,
+              "median": 0.0017
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.0382,
+              "median": 0.0087
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0063,
+              "median": 0.0
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 4203,
+              "mean": 0.0311,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.055,
+              "median": 0.0034
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0081,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 4203,
+              "mean": 0.0762,
+              "median": 0.0115
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.0993,
+              "median": 0.0233
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.054,
+              "median": 0.0054
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 4203,
+              "mean": 0.0793,
+              "median": 0.013
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.1055,
+              "median": 0.0278
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.054,
+              "median": 0.0046
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 4203,
+              "mean": 0.1181,
+              "median": 0.0444
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.1548,
+              "median": 0.08
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0827,
+              "median": 0.029
+            }
+          }
+        },
+        "10": {
+          "random": {
+            "all": {
+              "n": 4203,
+              "mean": 0.0331,
+              "median": 0.0042
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.0571,
+              "median": 0.0177
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0099,
+              "median": 0.001
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 4203,
+              "mean": 0.0442,
+              "median": 0.0001
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.0763,
+              "median": 0.0135
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0133,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 4203,
+              "mean": 0.0888,
+              "median": 0.0196
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.117,
+              "median": 0.0367
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0615,
+              "median": 0.0106
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 4203,
+              "mean": 0.0886,
+              "median": 0.0176
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.1199,
+              "median": 0.0397
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0584,
+              "median": 0.0072
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 4203,
+              "mean": 0.1271,
+              "median": 0.0496
+            },
+            "rumor": {
+              "n": 2065,
+              "mean": 0.1672,
+              "median": 0.0919
+            },
+            "nonrumor": {
+              "n": 2138,
+              "mean": 0.0883,
+              "median": 0.0317
+            }
+          }
+        }
+      }
+    },
+    "time:6h": {
+      "n_eligible": 3540,
+      "n_rumor": 1844,
+      "n_nonrumor": 1696,
+      "mean_observed": 470.53389830508473,
+      "mean_future": 563.6370056497175,
+      "median_observed": 195.0,
+      "median_future": 108.0,
+      "k": {
+        "1": {
+          "random": {
+            "all": {
+              "n": 3540,
+              "mean": 0.0042,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.0073,
+              "median": 0.0
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.0008,
+              "median": 0.0
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 3540,
+              "mean": 0.0099,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.0178,
+              "median": 0.0
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.0013,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 3540,
+              "mean": 0.0575,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.0636,
+              "median": 0.0
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.051,
+              "median": 0.0
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 3540,
+              "mean": 0.0744,
+              "median": 0.0061
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.0846,
+              "median": 0.0109
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.0633,
+              "median": 0.0015
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 3540,
+              "mean": 0.1176,
+              "median": 0.0461
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.1368,
+              "median": 0.0694
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.0966,
+              "median": 0.0323
+            }
+          }
+        },
+        "5": {
+          "random": {
+            "all": {
+              "n": 3540,
+              "mean": 0.0178,
+              "median": 0.0011
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.0297,
+              "median": 0.006
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.005,
+              "median": 0.0
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 3540,
+              "mean": 0.0265,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.0454,
+              "median": 0.0
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.0059,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 3540,
+              "mean": 0.0977,
+              "median": 0.0167
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.11,
+              "median": 0.025
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.0844,
+              "median": 0.0107
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 3540,
+              "mean": 0.1153,
+              "median": 0.0292
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.133,
+              "median": 0.0456
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.096,
+              "median": 0.0167
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 3540,
+              "mean": 0.19,
+              "median": 0.1016
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.2294,
+              "median": 0.1493
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.1471,
+              "median": 0.0705
+            }
+          }
+        },
+        "10": {
+          "random": {
+            "all": {
+              "n": 3540,
+              "mean": 0.0293,
+              "median": 0.0038
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.0481,
+              "median": 0.0143
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.0089,
+              "median": 0.0003
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 3540,
+              "mean": 0.0392,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.0659,
+              "median": 0.0049
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.0101,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 3540,
+              "mean": 0.1158,
+              "median": 0.0294
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.1333,
+              "median": 0.0448
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.0968,
+              "median": 0.0184
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 3540,
+              "mean": 0.1289,
+              "median": 0.0389
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.1516,
+              "median": 0.064
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.1042,
+              "median": 0.0225
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 3540,
+              "mean": 0.2091,
+              "median": 0.1148
+            },
+            "rumor": {
+              "n": 1844,
+              "mean": 0.2554,
+              "median": 0.1787
+            },
+            "nonrumor": {
+              "n": 1696,
+              "mean": 0.1589,
+              "median": 0.0833
+            }
+          }
+        }
+      }
+    },
+    "time:24h": {
+      "n_eligible": 2336,
+      "n_rumor": 1287,
+      "n_nonrumor": 1049,
+      "mean_observed": 1111.677654109589,
+      "mean_future": 320.97902397260276,
+      "median_observed": 402.0,
+      "median_future": 70.5,
+      "k": {
+        "1": {
+          "random": {
+            "all": {
+              "n": 2336,
+              "mean": 0.0026,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.004,
+              "median": 0.0
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.0008,
+              "median": 0.0
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 2336,
+              "mean": 0.0079,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.013,
+              "median": 0.0
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.0016,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 2336,
+              "mean": 0.0727,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.0676,
+              "median": 0.0
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.0789,
+              "median": 0.0
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 2336,
+              "mean": 0.093,
+              "median": 0.0093
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.0898,
+              "median": 0.0094
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.0969,
+              "median": 0.0088
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 2336,
+              "mean": 0.1691,
+              "median": 0.0909
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.1793,
+              "median": 0.1053
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.1565,
+              "median": 0.069
+            }
+          }
+        },
+        "5": {
+          "random": {
+            "all": {
+              "n": 2336,
+              "mean": 0.0128,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.0192,
+              "median": 0.0021
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.005,
+              "median": 0.0
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 2336,
+              "mean": 0.0216,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.0335,
+              "median": 0.0
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.007,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 2336,
+              "mean": 0.1189,
+              "median": 0.023
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.1157,
+              "median": 0.0241
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.1228,
+              "median": 0.0208
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 2336,
+              "mean": 0.1482,
+              "median": 0.05
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.1487,
+              "median": 0.0568
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.1476,
+              "median": 0.0417
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 2336,
+              "mean": 0.2915,
+              "median": 0.2029
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.3257,
+              "median": 0.25
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.2495,
+              "median": 0.1538
+            }
+          }
+        },
+        "10": {
+          "random": {
+            "all": {
+              "n": 2336,
+              "mean": 0.0237,
+              "median": 0.003
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.0347,
+              "median": 0.0085
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.0102,
+              "median": 0.0
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 2336,
+              "mean": 0.0323,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.0494,
+              "median": 0.0
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.0112,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 2336,
+              "mean": 0.1372,
+              "median": 0.0377
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.1367,
+              "median": 0.0417
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.1378,
+              "median": 0.0338
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 2336,
+              "mean": 0.1664,
+              "median": 0.0709
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.1705,
+              "median": 0.0792
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.1614,
+              "median": 0.05
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 2336,
+              "mean": 0.3276,
+              "median": 0.2407
+            },
+            "rumor": {
+              "n": 1287,
+              "mean": 0.3712,
+              "median": 0.3052
+            },
+            "nonrumor": {
+              "n": 1049,
+              "mean": 0.274,
+              "median": 0.1818
+            }
+          }
+        }
+      }
+    },
+    "prefix:20": {
+      "n_eligible": 4435,
+      "n_rumor": 2162,
+      "n_nonrumor": 2273,
+      "mean_observed": 19.0,
+      "mean_future": 836.7682074408117,
+      "median_observed": 19.0,
+      "median_future": 248.0,
+      "k": {
+        "1": {
+          "random": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0072,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.0132,
+              "median": 0.0011
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.0016,
+              "median": 0.0
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0131,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.0237,
+              "median": 0.0
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.003,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0413,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.067,
+              "median": 0.0012
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.0169,
+              "median": 0.0
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0433,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.0737,
+              "median": 0.0025
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.0143,
+              "median": 0.0
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0653,
+              "median": 0.0066
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.1103,
+              "median": 0.0274
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.0224,
+              "median": 0.0009
+            }
+          }
+        },
+        "5": {
+          "random": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0314,
+              "median": 0.002
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.0549,
+              "median": 0.0125
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.0091,
+              "median": 0.0
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0366,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.0651,
+              "median": 0.0052
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.0094,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0646,
+              "median": 0.0043
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.1086,
+              "median": 0.0222
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.0229,
+              "median": 0.0
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0593,
+              "median": 0.0002
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.1033,
+              "median": 0.0157
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.0175,
+              "median": 0.0
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0824,
+              "median": 0.0095
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.1417,
+              "median": 0.0502
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.026,
+              "median": 0.0012
+            }
+          }
+        },
+        "10": {
+          "random": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0507,
+              "median": 0.0052
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.0886,
+              "median": 0.0283
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.0146,
+              "median": 0.0006
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0544,
+              "median": 0.0026
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.0957,
+              "median": 0.0189
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.0151,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0747,
+              "median": 0.0068
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.1274,
+              "median": 0.0355
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.0245,
+              "median": 0.0002
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0661,
+              "median": 0.0036
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.1146,
+              "median": 0.0255
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.0199,
+              "median": 0.0
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 4435,
+              "mean": 0.0831,
+              "median": 0.0095
+            },
+            "rumor": {
+              "n": 2162,
+              "mean": 0.143,
+              "median": 0.051
+            },
+            "nonrumor": {
+              "n": 2273,
+              "mean": 0.026,
+              "median": 0.0012
+            }
+          }
+        }
+      }
+    },
+    "prefix:50": {
+      "n_eligible": 4084,
+      "n_rumor": 1937,
+      "n_nonrumor": 2147,
+      "mean_observed": 49.0,
+      "mean_future": 875.5999020568071,
+      "median_observed": 49.0,
+      "median_future": 254.0,
+      "k": {
+        "1": {
+          "random": {
+            "all": {
+              "n": 4084,
+              "mean": 0.0049,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.009,
+              "median": 0.0005
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0013,
+              "median": 0.0
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 4084,
+              "mean": 0.011,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.0198,
+              "median": 0.0
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.003,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 4084,
+              "mean": 0.0506,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.076,
+              "median": 0.0017
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0276,
+              "median": 0.0
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 4084,
+              "mean": 0.0571,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.092,
+              "median": 0.0079
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0257,
+              "median": 0.0
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 4084,
+              "mean": 0.0831,
+              "median": 0.0138
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.1325,
+              "median": 0.0463
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0386,
+              "median": 0.0046
+            }
+          }
+        },
+        "5": {
+          "random": {
+            "all": {
+              "n": 4084,
+              "mean": 0.0202,
+              "median": 0.0022
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.0353,
+              "median": 0.0111
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0066,
+              "median": 0.0003
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 4084,
+              "mean": 0.0302,
+              "median": 0.0
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.054,
+              "median": 0.0021
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0087,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 4084,
+              "mean": 0.0777,
+              "median": 0.0069
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.1227,
+              "median": 0.0272
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0371,
+              "median": 0.0014
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 4084,
+              "mean": 0.0803,
+              "median": 0.0037
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.1325,
+              "median": 0.0347
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0332,
+              "median": 0.0
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 4084,
+              "mean": 0.1165,
+              "median": 0.0263
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.1917,
+              "median": 0.0986
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0486,
+              "median": 0.0076
+            }
+          }
+        },
+        "10": {
+          "random": {
+            "all": {
+              "n": 4084,
+              "mean": 0.0331,
+              "median": 0.0047
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.0575,
+              "median": 0.0213
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.011,
+              "median": 0.0011
+            }
+          },
+          "earliest": {
+            "all": {
+              "n": 4084,
+              "mean": 0.0441,
+              "median": 0.0007
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.0777,
+              "median": 0.0117
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0137,
+              "median": 0.0
+            }
+          },
+          "followers": {
+            "all": {
+              "n": 4084,
+              "mean": 0.09,
+              "median": 0.0123
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.1439,
+              "median": 0.046
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0415,
+              "median": 0.0034
+            }
+          },
+          "outdegree_obs": {
+            "all": {
+              "n": 4084,
+              "mean": 0.0879,
+              "median": 0.0065
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.1468,
+              "median": 0.0463
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0348,
+              "median": 0.0
+            }
+          },
+          "greedy_oracle": {
+            "all": {
+              "n": 4084,
+              "mean": 0.1211,
+              "median": 0.028
+            },
+            "rumor": {
+              "n": 1937,
+              "mean": 0.2007,
+              "median": 0.1078
+            },
+            "nonrumor": {
+              "n": 2147,
+              "mean": 0.0493,
+              "median": 0.0077
+            }
+          }
+        }
+      }
+    }
+  }
+}
