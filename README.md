@@ -6,6 +6,8 @@ Counterfactual Opinion Reasoning with Temporal Graph Networks
 
 本仓库是独立研究代码。导师提供的 [DAMMFND](https://github.com/luweihai/DAMMFND)（AAAI 2025）只作为多模态检测的基础工作；论文若用到，按文献引用，而不是把本仓库写成它的 fork。
 
+第一轮实验报告：[docs/tgn_blocking_report.md](docs/tgn_blocking_report.md)。
+
 ## 实验方向
 
 1. **数据与协议**：用 Weibo 谣言级联树（`weibo22`）做时序图；在观察窗口 `t0`（1h / 6h / 24h）之后，从已出现的非根节点中选 `k` 个阻断，指标为后续被覆盖节点比例 `block_rate`。
@@ -18,11 +20,11 @@ Counterfactual Opinion Reasoning with Temporal Graph Networks
 
 - **级联盘点完成**：4664 棵树（非谣言 2351 / 谣言 2313），约 381 万节点、286 万独立用户。与本地多模态 `data/` **没有实例级对齐**。
 - **阻断基线已跑完**（不含根节点；主看谣言树）。1 小时窗口、`k=5` 时，随机约 3.8%，观察出度约 10.6%，oracle 约 15.5%。出度已明显好于随机，但离 oracle 仍有空档。
-- **MiniTGN 代码已写好**（`scripts/tgn_blocking.py`），与基线同一协议；完整训练结果还没有。
-- **GitHub 只放源码**。`weibo22/`、图片、特征 `pkl`、预训练权重均留在本地。
+- **MiniTGN 最小实验已跑完**（2026-09-19 从 epoch 2 续训到 5；最好在 epoch 3，val SmoothL1 0.0695）。持出谣言树上 **没有超过观察出度**：1h·k=5 时 TGN 11.3% / 出度 11.2% / oracle 16.0%；6h 上 TGN 略低于出度。书面报告：`docs/tgn_blocking_report.md`。
+- **weibo22 级联数据已入库**（约 4GB）。图片、DAMMFND 特征 `pkl` 和预训练权重仍留在本地。
 
 ## 接下来
 
-- 跑完 MiniTGN，并在持出谣言树上与出度基线对比。
-- 若 TGN 有效，再做更完整的反事实 rollout（不同 `t0` / `k`）。
-- 多模态与级联的对齐、联合建模暂缓，等时序阻断这条线站稳。
+- 不再加同一套 MiniTGN 的 epoch。要超过出度，需要改特征、目标或边回放，而不是接着训。
+- 反事实 rollout 仍可按现有协议扩 `t0` / `k`，但学习方法要换一档。
+- 多模态与级联对齐继续暂缓。

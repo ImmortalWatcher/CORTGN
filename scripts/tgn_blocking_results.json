@@ -1,0 +1,182 @@
+{
+  "protocol": {
+    "windows": [
+      "time:1h",
+      "time:6h"
+    ],
+    "k": [
+      1,
+      5,
+      10
+    ],
+    "split": "cascade-level 70/15/15 stratified by label",
+    "seed": 3074,
+    "model": "MiniTGN GRU memory on prefix retweet edges",
+    "max_edges": 128,
+    "max_grad_edges": 32,
+    "no_dammfnd": true,
+    "best_epoch": 3,
+    "best_val_mse": 0.06953854243840334,
+    "resumed": true
+  },
+  "n": {
+    "train": 3264,
+    "val": 698,
+    "test": 702
+  },
+  "history": [
+    {
+      "epoch": 3,
+      "train_mse": 0.0708,
+      "val_mse": 0.0695
+    },
+    {
+      "epoch": 4,
+      "train_mse": 0.0704,
+      "val_mse": 0.0697
+    },
+    {
+      "epoch": 5,
+      "train_mse": 0.0703,
+      "val_mse": 0.0697
+    }
+  ],
+  "test_rumor_block_rate": {
+    "time:1h": {
+      "1": {
+        "random": {
+          "n": 311,
+          "mean": 0.0101
+        },
+        "followers": {
+          "n": 311,
+          "mean": 0.0564
+        },
+        "outdegree_obs": {
+          "n": 311,
+          "mean": 0.0753
+        },
+        "greedy_oracle": {
+          "n": 311,
+          "mean": 0.1075
+        },
+        "tgn": {
+          "n": 311,
+          "mean": 0.0758
+        }
+      },
+      "5": {
+        "random": {
+          "n": 311,
+          "mean": 0.038
+        },
+        "followers": {
+          "n": 311,
+          "mean": 0.106
+        },
+        "outdegree_obs": {
+          "n": 311,
+          "mean": 0.1119
+        },
+        "greedy_oracle": {
+          "n": 311,
+          "mean": 0.1601
+        },
+        "tgn": {
+          "n": 311,
+          "mean": 0.1133
+        }
+      },
+      "10": {
+        "random": {
+          "n": 311,
+          "mean": 0.0594
+        },
+        "followers": {
+          "n": 311,
+          "mean": 0.1212
+        },
+        "outdegree_obs": {
+          "n": 311,
+          "mean": 0.1223
+        },
+        "greedy_oracle": {
+          "n": 311,
+          "mean": 0.1725
+        },
+        "tgn": {
+          "n": 311,
+          "mean": 0.1271
+        }
+      }
+    },
+    "time:6h": {
+      "1": {
+        "random": {
+          "n": 285,
+          "mean": 0.0071
+        },
+        "followers": {
+          "n": 285,
+          "mean": 0.0724
+        },
+        "outdegree_obs": {
+          "n": 285,
+          "mean": 0.0939
+        },
+        "greedy_oracle": {
+          "n": 285,
+          "mean": 0.1504
+        },
+        "tgn": {
+          "n": 285,
+          "mean": 0.092
+        }
+      },
+      "5": {
+        "random": {
+          "n": 285,
+          "mean": 0.029
+        },
+        "followers": {
+          "n": 285,
+          "mean": 0.1217
+        },
+        "outdegree_obs": {
+          "n": 285,
+          "mean": 0.1437
+        },
+        "greedy_oracle": {
+          "n": 285,
+          "mean": 0.2475
+        },
+        "tgn": {
+          "n": 285,
+          "mean": 0.1375
+        }
+      },
+      "10": {
+        "random": {
+          "n": 285,
+          "mean": 0.0606
+        },
+        "followers": {
+          "n": 285,
+          "mean": 0.151
+        },
+        "outdegree_obs": {
+          "n": 285,
+          "mean": 0.1643
+        },
+        "greedy_oracle": {
+          "n": 285,
+          "mean": 0.2755
+        },
+        "tgn": {
+          "n": 285,
+          "mean": 0.16
+        }
+      }
+    }
+  }
+}
