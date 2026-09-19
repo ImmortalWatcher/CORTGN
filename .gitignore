@@ -12,7 +12,6 @@ __pycache__/
 # Datasets and extracted features (too large for GitHub)
 data/
 data2/
-weibo22/
 weibo/nonrumor_images/
 weibo/rumor_images/
 weibo/*.pkl

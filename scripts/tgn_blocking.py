@@ -41,6 +41,14 @@ from blocking_baseline import (  # noqa: E402
 
 OUT_JSON = Path(__file__).resolve().parent / "tgn_blocking_results.json"
 CKPT = Path(__file__).resolve().parent / "tgn_blocking.pt"
+TRAIN_LOG = Path(__file__).resolve().parent / "tgn_train.log"
+RESUME_DEFAULT = Path(__file__).resolve().parent / "tgn_blocking_epoch2_interrupted.pt"
+
+
+def log(msg: str) -> None:
+    print(msg, flush=True)
+    with TRAIN_LOG.open("a", encoding="utf-8") as fh:
+        fh.write(msg + "\n")
 WINDOWS = ("time:1h", "time:6h")
 K_LIST = (1, 5, 10)
 FEAT_DIM = 3  # log_followers, log_hours_from_root, depth/16
@@ -189,7 +197,7 @@ def load_cascades() -> dict[str, dict]:
         if cas is not None:
             out[cas["id"]] = cas
         if (i + 1) % 500 == 0:
-            print(f"  load {i+1}/{len(files)}", flush=True)
+            log(f"  load {i+1}/{len(files)}")
     return out
 
 
@@ -296,62 +304,96 @@ def main() -> None:
     parser.add_argument("--mem-dim", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--accum", type=int, default=8)
+    parser.add_argument(
+        "--resume",
+        type=str,
+        default="",
+        help="checkpoint to continue from; empty = train from scratch",
+    )
+    parser.add_argument(
+        "--eval-only",
+        action="store_true",
+        help="skip remaining epochs and evaluate the resume/best checkpoint",
+    )
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     rng = random.Random(SEED)
     torch.manual_seed(SEED)
 
-    print("device", device, flush=True)
-    print("Loading cascades ...", flush=True)
+    log(f"device {device}")
+    log("Loading cascades ...")
     labels = load_labels()
     cas_map = load_cascades()
     ids = [i for i in cas_map if i in labels]
     train_ids, val_ids, test_ids = stratified_split(ids, labels, rng)
-    print(f"split train/val/test {len(train_ids)}/{len(val_ids)}/{len(test_ids)}", flush=True)
+    log(f"split train/val/test {len(train_ids)}/{len(val_ids)}/{len(test_ids)}")
 
-    print("Precompute train/val tensors ...", flush=True)
+    log("Precompute train/val tensors ...")
     train_packs = precompute_packs(cas_map, train_ids)
     val_packs = precompute_packs(cas_map, val_ids)
-    print(f"  train examples {len(train_packs)}  val {len(val_packs)}", flush=True)
+    log(f"  train examples {len(train_packs)}  val {len(val_packs)}")
 
     model = MiniTGN(args.mem_dim).to(device)
     opt = Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
     loss_fn = nn.SmoothL1Loss()
     best_val = float("inf")
     history = []
+    start_epoch = 1
 
-    for epoch in range(1, args.epochs + 1):
-        model.train()
-        rng.shuffle(train_packs)
-        opt.zero_grad(set_to_none=True)
-        running, seen = 0.0, 0
-        for i, pack in enumerate(train_packs, 1):
-            loss = cascade_loss(model, pack_to_device(pack, device), loss_fn) / args.accum
-            loss.backward()
-            running += float(loss.item()) * args.accum
-            seen += 1
-            if i % 400 == 0:
-                print(f"    epoch {epoch} {i}/{len(train_packs)}", flush=True)
-            if i % args.accum == 0:
+    resume_path = Path(args.resume) if args.resume else None
+    if resume_path is None and RESUME_DEFAULT.exists() and not args.eval_only:
+        resume_path = RESUME_DEFAULT
+    if resume_path is None and args.eval_only and CKPT.exists():
+        resume_path = CKPT
+    if resume_path is not None:
+        ckpt0 = torch.load(resume_path, map_location=device, weights_only=False)
+        model.load_state_dict(ckpt0["model"])
+        start_epoch = int(ckpt0.get("epoch", 0)) + 1
+        best_val = float(ckpt0.get("val", best_val))
+        history = list(ckpt0.get("history", []))
+        log(f"resume {resume_path} last_epoch={ckpt0.get('epoch')} val={best_val:.6f} next={start_epoch}")
+
+    if not args.eval_only:
+        for epoch in range(start_epoch, args.epochs + 1):
+            model.train()
+            rng.shuffle(train_packs)
+            opt.zero_grad(set_to_none=True)
+            running, seen = 0.0, 0
+            for i, pack in enumerate(train_packs, 1):
+                loss = cascade_loss(model, pack_to_device(pack, device), loss_fn) / args.accum
+                loss.backward()
+                running += float(loss.item()) * args.accum
+                seen += 1
+                if i % 400 == 0:
+                    log(f"    epoch {epoch} {i}/{len(train_packs)}")
+                if i % args.accum == 0:
+                    nn.utils.clip_grad_norm_(model.parameters(), 5.0)
+                    opt.step()
+                    opt.zero_grad(set_to_none=True)
+            if seen % args.accum:
                 nn.utils.clip_grad_norm_(model.parameters(), 5.0)
                 opt.step()
                 opt.zero_grad(set_to_none=True)
-        if seen % args.accum:
-            nn.utils.clip_grad_norm_(model.parameters(), 5.0)
-            opt.step()
-            opt.zero_grad(set_to_none=True)
-        val = eval_mse(model, val_packs, loss_fn, device)
-        tr = running / max(seen, 1)
-        history.append({"epoch": epoch, "train_mse": round(tr, 4), "val_mse": round(val, 4)})
-        print(f"epoch {epoch}/{args.epochs}  train {tr:.4f}  val {val:.4f}", flush=True)
-        if val < best_val:
-            best_val = val
-            torch.save({"model": model.state_dict(), "epoch": epoch, "val": val}, CKPT)
-            print("  saved", CKPT, flush=True)
+            val = eval_mse(model, val_packs, loss_fn, device)
+            tr = running / max(seen, 1)
+            history.append({"epoch": epoch, "train_mse": round(tr, 4), "val_mse": round(val, 4)})
+            log(f"epoch {epoch}/{args.epochs}  train {tr:.4f}  val {val:.4f}")
+            last_path = CKPT.with_name("tgn_blocking_last.pt")
+            torch.save(
+                {"model": model.state_dict(), "epoch": epoch, "val": val, "history": history},
+                last_path,
+            )
+            if val < best_val:
+                best_val = val
+                torch.save(
+                    {"model": model.state_dict(), "epoch": epoch, "val": val, "history": history},
+                    CKPT,
+                )
+                log(f"  saved {CKPT}")
 
-    ckpt = torch.load(CKPT, map_location=device, weights_only=False)
+    ckpt = torch.load(CKPT if CKPT.exists() else resume_path, map_location=device, weights_only=False)
     model.load_state_dict(ckpt["model"])
-    print("Evaluating test rumor block_rate ...", flush=True)
+    log("Evaluating test rumor block_rate ...")
     cache: dict = {}
     test_tbl = block_table(model, cas_map, test_ids, labels, device, cache)
     report = {
@@ -366,14 +408,15 @@ def main() -> None:
             "no_dammfnd": True,
             "best_epoch": ckpt["epoch"],
             "best_val_mse": ckpt["val"],
+            "resumed": bool(resume_path),
         },
         "n": {"train": len(train_ids), "val": len(val_ids), "test": len(test_ids)},
         "history": history,
         "test_rumor_block_rate": test_tbl,
     }
     OUT_JSON.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps(test_tbl, indent=2))
-    print("Wrote", OUT_JSON)
+    log(json.dumps(test_tbl, indent=2))
+    log(f"Wrote {OUT_JSON}")
 
 
 if __name__ == "__main__":

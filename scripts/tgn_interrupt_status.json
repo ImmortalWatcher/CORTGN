@@ -1,0 +1,19 @@
+{
+  "status": "completed",
+  "stopped_at": "2026-09-19T12:40:00+08:00",
+  "run": {
+    "resumed_from": "scripts/tgn_blocking_epoch2_interrupted.pt",
+    "command": "python -u scripts/tgn_blocking.py --epochs 5 --resume scripts/tgn_blocking_epoch2_interrupted.pt",
+    "device": "cuda",
+    "planned_epochs": 5,
+    "best_epoch": 3,
+    "best_val_smoothl1": 0.06953854243840334
+  },
+  "outputs": {
+    "results": "scripts/tgn_blocking_results.json",
+    "log": "scripts/tgn_train.log",
+    "best_ckpt": "scripts/tgn_blocking.pt",
+    "last_ckpt": "scripts/tgn_blocking_last.pt"
+  },
+  "finding": "MiniTGN ties or slightly underperforms observed outdegree on held-out rumor trees; does not close the gap to greedy oracle."
+}
