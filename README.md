@@ -25,6 +25,9 @@ Counterfactual Opinion Reasoning with Temporal Graph Networks
 
 ## 接下来
 
-- 不再加同一套 MiniTGN 的 epoch。要超过出度，需要改特征、目标或边回放，而不是接着训。
-- 反事实 rollout 仍可按现有协议扩 `t0` / `k`，但学习方法要换一档。
-- 多模态与级联对齐继续暂缓。
+导师要求把阻断做准，并可以试强化学习。路径侧看 VLDB Journal 2026 的影响力/阻断最小化，内容侧看 AAAI 2026 的 ED2D。PDF、笔记、成功线和给下一个 agent 的入口：
+
+- [docs/AGENT_PROGRESS.md](docs/AGENT_PROGRESS.md)
+- [docs/next_steps_blocking_and_intervention.md](docs/next_steps_blocking_and_intervention.md)
+
+执行顺序是：先补「达到给定削减比例所需的最少阻断人数」，再用强化学习做观察窗口内的序贯选点，内容辟谣受检测置信度约束后再做小样本。不要给 MiniTGN 加 epoch。多模态与级联对齐继续暂缓。

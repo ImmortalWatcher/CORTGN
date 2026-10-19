@@ -1,0 +1,4184 @@
+
+
+===== PAGE 1 =====
+The VLDB Journal          (2026) 35:53 
+https://doi.org/10.1007/s00778-026-01003-4
+REGULAR PAPER
+Efﬁcient and cost-effective inﬂuence and blocker minimization
+Jinghao Wang1 · Yanping Wu1
+· Xiaoyang Wang2 · Ying Zhang1 · Lu Qin1 · Wenjie Zhang2 · Xuemin Lin3
+Received: 1 September 2025 / Revised: 21 June 2026 / Accepted: 2 August 2026
+© The Author(s) 2026
+Abstract
+Online social networks have emerged as prominent platforms for individuals to rapidly share ideas and perspectives. However,
+their swift dissemination capabilities also make them powerful channels for the spread of misinformation. Such dissemination
+results in substantial economic and societal harm, highlighting the need for effective suppression. To support this practical
+demand, this paper investigates the inﬂuence minimization (IMIN) and blocker minimization (BM) problems. The IMIN
+problem aims to ﬁnd a node set of size k (the given budget) to block, such that the reduction in inﬂuence spread of a given seed
+set S is maximized. The BM problem is the dual of IMIN, aiming to ﬁnd a node set of minimum cardinality to block, such
+that the threshold condition is satisﬁed, i.e., the reduction in inﬂuence spread of S is not less than the given threshold η. Both
+problems are NP-hard and involve a non-submodular objective function. Existing IMIN solutions incur high computational
+costs and offer no approximation guarantees on inﬂuence spread reduction. To ﬁll the gap, we build upon the sandwich
+strategy to develop the ﬁrst efﬁcient algorithm with data-dependent approximation guarantees for IMIN. In particular, we
+design non-trivial (1 −1/e −ϵ)-approximation algorithms to optimize the proposed submodular bounding functions. For the
+BM problem, the existing solution is of limited effectiveness and lacks theoretical guarantees for both node set cardinality and
+threshold condition satisfaction. In this paper, we design a heuristic and two bicriteria approximation algorithms to address
+the BM problem. The heuristic is efﬁcient and satisﬁes the threshold condition, but fails to ensure near-optimal cardinality.
+The two approximation algorithms both provide guarantees on cardinality: the ﬁrst attains a tighter approximation ratio at
+the expense of efﬁciency, while the second yields a slightly weaker ratio with improved efﬁciency. Finally, comprehensive
+experiments on 9 real-world datasets are conducted to validate the efﬁciency and effectiveness of the proposed techniques.
+Keywords Social networks · Inﬂuence minimization · Non-submodular optimization
+B Yanping Wu
+yanping.wu@student.uts.edu.au
+Jinghao Wang
+jinghao.wang@student.uts.edu.au
+Xiaoyang Wang
+xiaoyang.wang1@unsw.edu.au
+Ying Zhang
+ying.zhang@uts.edu.au
+Lu Qin
+lu.qin@uts.edu.au
+Wenjie Zhang
+wenjie.zhang@unsw.edu.au
+Xuemin Lin
+xuemin.lin@sjtu.edu.cn
+1
+University of Technology Sydney, Sydney, NSW, Australia
+2
+University of New South Wales, Sydney, NSW, Australia
+3
+Shanghai JiaoTong University, Shanghai, China
+1 Introduction
+With the rapid development of the Internet, various online
+social networks (OSNs) have thrived, immensely satisfy-
+ing and facilitating the need for individuals to share their
+perspectives. Leveraging the established connections among
+individuals, ideas spread across OSNs through word-of-
+mouth effects [12]. However, immense user bases and rapid
+sharing abilities also make OSNs effective channels for
+spreading misinformation, which leads to signiﬁcant harm,
+such as economic damages and societal unrest [3, 36, 59]. As
+a result, limiting the spread of misinformation has emerged as
+an important and urgent task. To this end, one effective strat-
+egyistoremoveasetofcriticalnodes(referredtoasblockers)
+from the network. A natural question under this strategy is,
+within a limited budget, how to identify a set of blockers
+that maximally suppresses misinformation. Wang et al. [52]
+ﬁrst formulate this as an optimization problem, referred to as
+0123456789().: V,-vol 
+123
+
+
+===== PAGE 2 =====
+   53 
+Page 2 of 26
+J. Wang et al.
+inﬂuence minimization (IMIN). Formally, given a graph G,
+a seed set S, and a budget k, the IMIN problem aims to ﬁnd
+a set of k nodes to block such that the reduction in inﬂuence
+spread of S is maximized. In addition, in real-world infor-
+mation diffusion, user engagement may reach a tipping point
+beyond which the diffusion process unfolds like wildﬁre [15,
+35]. Hence, those seeking to suppress misinformation would
+like to prevent a target number of users from being exposed,
+thereby avoiding the tipping point and curbing its explosive
+spread. To support this practical requirement, Pham et al. [41]
+formulate the blocker minimization (BM) problem: given a
+graph G, a seed set S, and a threshold η, the BM problem
+aims to ﬁnd a blocker set with minimum cardinality such
+that the threshold condition is satisﬁed, i.e., the reduction in
+inﬂuence spread of S is not less than the given threshold η. In
+this paper, we investigate both the IMIN and BM problems
+under the IC model, and aim to develop algorithms that are
+practically efﬁcient and theoretically grounded.
+The IMIN problem is NP-hard and APX-hard under the
+IC model [60]. To address the problem, Wang et al. [52]
+ﬁrst utilize Monte-Carlo simulations to estimate the reduced
+inﬂuence spread of seed set S given any blocker, and provide
+a greedy algorithm to select blockers, i.e., iteratively select
+the node that leads to the largest reduced inﬂuence spread.
+However, their solution is prohibitively expensive on large
+graphs due to the inefﬁciency of Monte-Carlo simulations.
+Recently, based on the dominator tree (see Sect.2.4 for for-
+mal deﬁnition), Xie et al. [60] design an efﬁcient approach
+that can accurately estimate the reduced spread of S. On this
+basis, a greedy method is ﬁrst proposed. Xie et al. further
+observe that the greedy framework may miss selecting some
+critical nodes. This motivates the development of a more
+effective modiﬁed greedy algorithm, which prioritizes the
+outgoing neighbors of seed nodes in S. However, the solu-
+tions in [60] require re-estimating the reduced spread of S
+after selecting a blocker in each iteration, which results in
+prohibitive computation overhead, especially when the bud-
+get k becomes large. Moreover, since the objective function
+of IMIN is non-submodular, adopting the greedy method
+cannot provide (1 −1/e)-approximate solutions [37]. Based
+on the notions of curvature and submodularity ratio [4], we
+further prove that applying the greedy method to the IMIN
+objective cannot provide any meaningful performance guar-
+antees on inﬂuence spread reduction.
+To bridge the gap in IMIN, we propose SandIMIN, an
+approximation algorithm which exhibits superior efﬁciency
+and provides strong approximation guarantees. Building
+on the sandwich strategy [34, 56], SandIMIN ﬁrst devel-
+ops submodular lower and upper bounds for the objective
+function, and then produces solutions with (1 −1/e −ϵ)-
+approximations to maximize the lower and upper bounding
+functions (breads of the sandwich). A heuristic solution for
+IMIN is also produced (ﬁlling of the sandwich). SandIMIN
+ﬁnally returns the best result among the three candidate solu-
+tions.
+The development of SandIMIN is non-trivial due to
+the three challenges. Firstly, tight bounding functions with
+the submodularity property (w.r.t. the IMIN objective) are
+required to provide high-quality results. In particular, the
+empirical effectiveness and approximation guarantees of the
+sandwich-based approach rely on how close the proposed
+bounds are to the objective function; a loose bounding func-
+tion can be applied in our scenario, but it would fail to
+produce satisfactory results. For example, a constant func-
+tion can serve as a trivial submodular upper bound (e.g., an
+upper bound that equals the number of nodes in the graph).
+However, it is apparent that this bounding function may
+adversely affect our results since the solution to the con-
+stant function can be arbitrary. We address this challenge by
+developing robust lower and upper bounding functions, with
+their tightness empirically evidenced by SandIMIN’s superior
+effectiveness and approximation ratio in our experiments.
+Secondly, the proposed bounding functions are intractable
+to compute in practice, and we prove that their computations
+are both #P-hard. This necessitates efﬁcient and accurate esti-
+mation methods. The widely used and powerful technique for
+inﬂuence estimation, reverse inﬂuence sampling (RIS) [5],
+cannot be trivially adapted to our setting. This is because,
+in contrast with RIS that treats all the nodes equally and
+samples the node uniformly, we only need to focus on the
+nodes that are prone to be activated by the seed set S, since
+only those nodes can contribute to the bounding functions.
+That is, if we estimate the bounding functions using a simi-
+lar manner of RIS, we need to sample the node based on its
+probability of being activated by S. However, this probability
+is #P-hard to compute [7]. To overcome this issue, we ﬁrst
+deﬁne two new sample sets named CP sequence and LRR
+set, and design efﬁcient approaches for their generation. On
+this basis, the unbiased estimators for the bounding functions
+are then established.
+Thirdly, it is essential to derive the appropriate sample
+complexity for bounding function maximization to ensure
+both performance guarantees and practical implementation.
+The sampling schemes used in existing inﬂuence maxi-
+mization solutions (e.g., OPIM-C [43]) cannot be applied to
+address this challenge, as their unbiased estimator for inﬂu-
+ence spread differs in form from ours. In view of this, we
+ﬁrst establish novel martingale-based concentration bounds
+tailored to our unbiased estimators. With these results, we
+develop advanced stopping conditions to correctly miti-
+gate the redundant sample generation. Building on these
+foundations, we design App-LB and App-UB, (1 −1/e −ϵ)-
+approximation algorithms for lower and upper bounding
+functions maximization, respectively.
+The BM problem is also proven to be NP-hard under the IC
+model [41]. To tackle the problem, Pham et al. [41] propose
+123
+
+
+===== PAGE 3 =====
+Efﬁcient and cost-effective inﬂuence...
+Page 3 of 26
+   53 
+a greedy approach that iteratively selects the blocker with the
+largest estimated marginal gain in inﬂuence spread reduction,
+until the threshold condition is satisﬁed. In particular, they
+utilize a tree-based estimation method for the objective func-
+tion, which is efﬁcient but inherently yields biased results.
+As a consequence, the resulting algorithm exhibits limited
+effectiveness and fails to provide any theoretical guarantees
+for both blocker set cardinality and threshold condition sat-
+isfaction.
+In this work, we propose three more effective algorithms
+for the BM problem. Our ﬁrst method, Heur-BM, follows
+the general workﬂow of the approach proposed in [41] but
+improves it by incorporating an unbiased estimator of the
+objective function. This design enables Heur-BM to theoret-
+ically satisfy the threshold condition with high probability.
+In addition, Heur-BM attains high efﬁciency through a novel
+two-stage algorithmic optimization. Nevertheless, Heur-BM
+lacks any approximation guarantees in terms of the blocker
+set cardinality, due to the non-submodularity of the opti-
+mized objective function. In light of this, we then devise a
+bicriteria approximation algorithm App-BM. At a high level,
+rather than optimizing the objective function as in Heur-BM,
+App-BM targets the optimization of the submodular upper
+bounding function, by generating a ﬁxed number of sam-
+ples. We prove that when the input error parameter μ of
+App-BM falls below a boundary value, the algorithm can
+guarantee strong approximation on the blocker set cardinality
+with only a minor violation of the threshold condition. How-
+ever, we note that this boundary value is generally very small
+in practice, which causes App-BM to require an excessively
+large sample size and makes it mainly of theoretical interest.
+This limitation motivates us to further design a more efﬁ-
+cient bicriteria approximation algorithm App-BM+, which
+also focuses on optimizing the upper bounding function,
+but improves upon App-BM by employing a more reﬁned
+sampling scheme. Speciﬁcally, App-BM+ adopts a trial-and-
+error strategytodynamicallydecreaseμuntilthepre-deﬁned
+stopping conditions are satisﬁed. This adaptive mechanism
+enables App-BM+ to achieve substantially higher empirical
+efﬁciency than App-BM. As the price of enhanced efﬁciency,
+weprovethat App-BM+providesslightlyweakerapproxima-
+tion ratios than App-BM. It is noteworthy that the underlying
+idea of the two approaches resembles the sandwich strategy;
+however, the key difference lies in the objective: our goal is
+to minimize the blocker set cardinality, while the sandwich
+strategy is devised for maximization problems. This intrin-
+sically renders its theoretical results inapplicable to the BM
+setting, thus necessitating new insights and making our anal-
+ysis non-trivial.
+Finally, extensive experiments over 9 real-world datasets
+are conducted to verify the efﬁciency and effectiveness of
+our proposed techniques. The experimental results demon-
+strate that, for the IMIN problem, our SandIMIN algorithm
+achieves orders-of-magnitude speedups while maintaining
+competitive solution quality compared with the state-of-the-
+arts [60]. Moreover, for the BM problem, our algorithms are
+scalable and consistently deliver superior effectiveness over
+the existing solution [41]. Note that this paper is a signiﬁcant
+extension of our previous work [51]. The main contributions
+of the paper are summarized as follows.
+• For the IMIN problem, we design (1 −1/e −ϵ)-
+approximation algorithms to maximize the proposed
+submodular bounding functions. Building on these foun-
+dations, we propose SandIMIN, the ﬁrst efﬁcient approx-
+imation algorithm that provides strong data-dependent
+approximation guarantees.
+• For the BM problem, we ﬁrst propose Heur-BM, a
+heuristic that guarantees the threshold condition satis-
+faction. We then propose two bicriteria approximation
+algorithms, App-BM and App-BM+: App-BM achieves
+a tighter approximation ratio but sacriﬁces efﬁciency,
+while App-BM+ attains improved efﬁciency at the
+expense of slightly weaker ratios.
+• We conduct extensive experiments on 9 real-world
+datasets to evaluate the performance of our algorithms
+on the IMIN and BM problems. The results demonstrate
+substantial improvements over the corresponding com-
+petitors across both tasks.
+Roadmap The remainder of this paper is organized as
+follows. Section2 introduces the formal deﬁnitions of the
+studied problems and revisits existing solutions. Sections3
+and4presentthedetailsofoursolutionsfortheIMINandBM
+problems, respectively. We conduct extensive experiments in
+Sect.5. Section6 reviews the related work, and Sect.7 con-
+cludes the paper.
+Due to the limited space, some proofs and experimental
+results are deferred to the online appendix [1].
+2 Preliminaries
+In this paper, we consider a directed graph G = (V , E) with
+a node set V and a directed edge set E, where |V | = n
+and |E| = m. Given an edge ⟨u, v⟩∈E, we refer to u
+as an incoming neighbor of v and v as an outgoing neigh-
+bor of u. Each edge ⟨u, v⟩is associated with a propagation
+probability p(u, v) ∈[0, 1], representing the probability that
+u activates v. Table 1 summarizes the notations frequently
+used throughout the paper. Sect.2.1 ﬁrst introduces the diffu-
+sion model. Section2.2 presents the formal deﬁnitions of the
+studied problems, Sect.2.3 analyzes their relationship, and
+Sect.2.4 reviews their existing solutions. Finally, Sect.2.5
+presents some useful sampling techniques.
+123
+
+
+===== PAGE 4 =====
+   53 
+Page 4 of 26
+J. Wang et al.
+Table 1 Summary of notations
+Notation
+Description
+G = (V , E)
+the directed graph G
+k
+the budget k of the IMIN problem
+S, B
+the seed set and the blocker set
+E[IG(S)]
+the inﬂuence spread of seed set S
+G[V ′]
+a subgraph of G induced by node set V ′
+φ
+a random realization
+D(B)
+the decreased spread after blocking B
+DL(·), DU(·)
+the lower and upper bound of D(·)
+Bo
+L, Bo
+U, Bo
+1
+the size-k optimal solutions to maximize
+DL(·), DU(·) and D(·)
+R−
+φ (s)
+nodes reached by s in φ excluding S ∪{s}
+V ′
+s
+nodes reached by s in G excluding S ∪{s}
+Cs, Cs
+a CP sequence and the set of CP sequences
+L(v), L
+a LRR set of v and the set of LRR sets
+η
+the threshold of the BM problem
+Bo
+2
+the solution with the smallest cardinality
+that satisﬁes D(Bo
+2) ≥η
+B∗
+2
+the solution with the smallest cardinality
+that satisﬁes DU(B∗
+2) ≥η
+2.1 Diffusion model
+We focus on the widely-studied independent cascade (IC)
+model [5, 24, 43, 54, 55, 58]. Given a seed set S ⊆V , the
+diffusion process of S under the IC model unfolds in discrete
+timestamps.Attimestamp0,onlythenodesin S areactivated.
+Each activated node will remain active in the subsequent
+timestamps. If a node u is activated at timestamp t, then
+for each of its inactive outgoing neighbor v, u has a single
+chance to activate v with probability p(u, v) at timestamp
+t + 1. The propagation process stops when no more nodes
+can be activated.
+2.2 Problem definition
+Given a seed set S, let IG(S) be the number of active nodes in
+G when the stochastic propagation process stops. We deﬁne
+E[IG(S)] as the inﬂuence spread of S, where the expectation
+is taken over the randomness of propagation. Alternatively,
+the diffusion process can be characterized by live edge pro-
+cedure [24]. For any given G = (V , E), by removing each
+⟨u, v⟩∈E with 1 −p(u, v) probability, the remaining sub-
+graph is referred to as a random realization (denoted by φ)
+of G. Let Iφ(S) be the number of nodes reachable from S
+in φ. The inﬂuence spread E[IG(S)] of S can be calculated
+as E[IG(S)] = 
+φ∈ Iφ(S) · p(φ), where  is the set of
+all possible realizations of G, and p(φ) is the probability for
+realization φ to occur.
+In this work, we consider the node blocking strategy to
+minimize the inﬂuence spread of a given seed set. When a
+node u is blocked, we set the probability of all edges pointing
+to u as 0 and refer to u as a blocker; nodes whose status
+transitions from active to inactive due to this operation are
+said to be protected by u. We assume that seed nodes cannot
+be blocked. Given a seed set S ⊆V and a blocker set B ⊆
+V \S, we denote DS(B) = E[IG(S)] −E[IG[V \B](S)] as the
+expected number of nodes protected by B, i.e., the reduced
+inﬂuence spread of S after blocking B, where G[V \B] is the
+subgraph of G induced by V \B.
+Problem statement 1 Given a directed graph G, a seed set S
+and a budget k, the inﬂuence minimization (IMIN) problem
+is to ﬁnd a blocker set Bo
+1 with at most k nodes such that
+the inﬂuence spread of S is minimized after blocking Bo
+1. In
+other words, IMIN is to identify a blocker set such that the
+expected number of nodes protected by Bo
+1 is maximized.
+Formally, we have
+Bo
+1 = arg maxB⊆V \S,|B|≤k DS(B).
+When the context is clear, the subscript in DS(·) is omitted
+for brevity, which we denote by D(·).
+Xie et al. [60] have established the computational hardness
+of IMIN and the properties of D(·) under the IC model, as
+detailed below.
+Theorem 1 ( [60]) Under the IC model, IMIN problem is
+NP-hard and APX-hard unless P=NP.
+Theorem 2 ( [60]) Under the IC model, for any seed set S ⊆
+V , D(·) is monotonic but not submodular.
+In addition to the IMIN problem, to better support real-
+world applications, this work also investigates the blocker
+minimization problem, as deﬁned below.
+Problem statement 2 Given a directed graph G, a seed set
+S and a non-negative threshold η, the blocker minimization
+(BM) problem is to ﬁnd a blocker set Bo
+2 with minimum
+cardinality such that the expected number of nodes protected
+by Bo
+2 is not less than η, i.e.,
+Bo
+2 = arg minB⊆V \S |B| s.t. D(B) ≥η.
+Note that for any given S, D(·) is upper bounded by E[IG(S)]
+−|S|. Hence, we restrict η to the range (0, E[IG(S)]−|S|). In
+addition, if D(B) ≥η, we can say that B meets the threshold
+condition.
+In [41], Pham et al. prove the hardness of BM under the
+IC model, as presented below.
+Theorem 3 ( [41]) Under the IC model, the BM problem is
+NP-hard unless P=NP.
+123
+
+
+===== PAGE 5 =====
+Efﬁcient and cost-effective inﬂuence...
+Page 5 of 26
+   53 
+2.3 Relationship between IMIN and BM
+The IMIN and BM problems are deﬁned over the same set
+function D(·) but swap the roles of objective and constraint:
+IMIN maximizes D(·) under a cardinality budget, whereas
+BM minimizes the cardinality subject to a threshold on D(·).
+In the following, we ﬁrst show that, under exact optimiza-
+tion, the two problems are mutually reducible, i.e., an exact
+oracle for either problem solves the other (Lemma 1). This
+reduction, however, is of purely theoretical interest, since
+both problems are NP-hard and thus intractable to solve
+exactly.Wethenshowthatthereducibilitybreaksdownunder
+approximation: an approximation guarantee for one problem
+does not transfer to the other (Lemma 2). Consequently, each
+problem calls for dedicated approximation algorithms.
+Lemma 1 An exact oracle for either of IMIN and BM solves
+the other in polynomial time.
+Proof Let OPT(k) = maxB⊆V \S, |B|≤k D(B), and let Bo
+2(t)
+be a minimum-cardinality set with D(Bo
+2(t)) ≥t, where
+|Bo
+2(t)| = ∞if no such set exists. Both quantities are non-
+decreasing and satisfy
+|Bo
+2(t)| ≤k ⇐⇒OPT(k) ≥t,
+(1)
+since each side states that some blocker set of size at most k
+attains value at least t.
+IMIN ⇒BM. Let k∗= min{k : OPT(k) ≥η}. By Eq. (1),
+|Bo
+2(η)| = k∗. As OPT(·) is monotone, binary search over k
+locates k∗with O(log n) IMIN queries. The set Bk∗returned
+at budget k∗satisﬁes D(Bk∗) = OPT(k∗) ≥η; since no set
+of size below k∗attains η, it is an optimal BM solution.
+BM ⇒IMIN. By Eq. (1), OPT(k) = max{t : |Bo
+2(t)| ≤k},
+which we locate by binary search over t. By convention, all
+edge probabilities are rationals, and we let q be the maxi-
+mum of their denominators. Then the probability of every
+realization, being a product of at most m such terms, is
+a multiple of 1/Q with Q ≤qm, and so is every attain-
+able value of D(·), including OPT(k). It thus sufﬁces to
+perform the binary search over the multiples of 1/Q in
+(0, n]; since the predicate |Bo
+2(t)| ≤k is monotone in t, the
+search returns the largest feasible value t∗= OPT(k) within
+O(log(nQ)) = O(m log q + log n) BM queries. The set B
+returned by the BM oracle at t∗satisﬁes D(B) ≥t∗and
+|B| ≤k; hence D(B) = t∗= OPT(k), i.e., B is an optimal
+IMIN solution.
+⊓⊔
+Lemma 2 Approximation does not transfer between IMIN
+and BM. (i) An α-approximate IMIN algorithm (which, for
+budget k, returns a set B with |B| ≤k and D(B) ≥α D(Bo
+1),
+0 < α < 1) yields no bounded cardinality approximation
+for BM. (ii) A β-approximate BM algorithm (which, for any
+threshold η, returns a B with D(B) ≥η and |B| ≤β |Bo
+2|,
+β > 1) yields no non-trivial approximation guarantee for
+IMIN.
+Proof IMIN ⇏BM. We exhibit an α-approximate IMIN
+algorithm whose output stays below η until the budget far
+exceeds |Bo
+2|. Consider the following instance. Let g =
+⌈1/(1 −α)⌉, so that (g −1)/g ≥α, ﬁx an integer p ≥2,
+and let M = ⌈gp/α⌉. The seed s has probability-1 edges to g
+nodes u1, . . . , ug and to M nodesr1, . . . ,rM, and each ui has
+probability-1 edges to p −1 nodes reachable only through it.
+Blocking ui protects p nodes while blocking any other node
+protects exactly 1, so OPT(k) = min(k, g) p+max(0, k−g).
+Set η = gp, which is valid as the total protectable number is
+gp+ M; protecting gp nodes most cheaply requires blocking
+all g of the ui, hence |Bo
+2| = g.
+Let k∗= min{k : α OPT(k) > η−1}. For each budget k <
+k∗, consider the output Bk = {u1, . . . , um} ∪{r1, . . . ,rt},
+where m = min(k, g −1) and t = min(k −m, p −1), so
+that |Bk| = m + t ≤k and D(Bk) = mp + t. We ﬁrst show
+that Bk is a valid α-approximate output:
+• Case 1 (k ≤g −1). D(Bk) = kp = OPT(k).
+• Case 2 (k ≥g, t = p −1). D(Bk) = η −1 ≥α OPT(k),
+since α OPT(k) ≤η −1 for every k < k∗.
+• Case 3 (k ≥g, t = k −g + 1 < p −1). D(Bk) =
+(g −1)p + (k −g + 1) ≥αgp + α(k −g) = α OPT(k),
+due to (g −1)/g ≥α and α < 1.
+Yet, D(Bk) ≤(g −1)p + (p −1) = η −1 < η in every
+case, i.e., Bk never meets the threshold. This indicates that,
+within this budget range, an α-approximate IMIN algorithm
+cannot produce BM-feasible solution.
+For each budget k ≥k∗, consider the optimal size-k
+IMIN solution Bo
+1, which meets the threshold as D(Bo
+1) =
+OPT(k)
+≥
+OPT(g)
+=
+η, noting that k∗
+>
+g since
+α OPT(g) = αgp ≤gp −1 by g(1 −α) ≥1 and p ≥2.
+It remains to quantify k∗. Since OPT(k) = gp + (k −g)
+for k ≥g, the deﬁning condition α OPT(k) > η −1
+becomes α(gp + k −g) > gp −1, which gives k∗=
+g + ⌈(gp(1 −α) −1)/α⌉. Thus k∗grows without bound
+as p increases, whereas |Bo
+2| = g stays constant. Hence, an
+α-approximate IMIN algorithm yields no bounded cardinal-
+ity approximation for BM.
+BM ⇏IMIN. We exhibit a β-approximate BM algorithm
+whose outputs, when used for IMIN under budget k, attain
+only a vanishing fraction of OPT(k). Consider the follow-
+ing instance. Let k = ⌈1/(β −1)⌉, the smallest integer
+with βk ≥k + 1, and ﬁx an integer M ≥βk. The seed
+s has probability-1 edges to k nodes v1, . . . , vk, and each
+vi has probability-1 edges to every node of {w1, . . . , wM}.
+Since each w j remains reachable through any unblocked vi,
+a blocker set B not containing all of v1, . . . , vk protects only
+123
+
+
+===== PAGE 6 =====
+   53 
+Page 6 of 26
+J. Wang et al.
+itself, whereas blocking all k of the vi protects everything.
+Hence OPT(k −1) = k −1 and OPT(k) = k + M, and the
+BM optimum at any threshold t is |Bo
+2(t)| = min(⌈t⌉, k).
+For each threshold t, consider the output Bt deﬁned below:
+• Case 1 (⌈t⌉≤k −1). Bt = {w1, . . . , w⌈t⌉}, which is an
+optimal BM solution.
+• Case 2 (⌈t⌉≥k). Bt ={v1, . . . ,vk} ∪{w1, . . . ,w⌊βk⌋−k},
+so that D(Bt) ≥t and |Bt| = ⌊βk⌋≤βk = β |Bo
+2(t)|.
+Both cases are valid β-approximate outputs. Now use this
+algorithm for budget-k IMIN, where an output is usable only
+if its cardinality is at most k. In Case 2, |Bt| = ⌊βk⌋≥
+k + 1 > k, so every threshold with ⌈t⌉≥k overﬂows the
+budget; in Case 1, the obtained value is only D(Bt) = ⌈t⌉≤
+k −1. The best IMIN value obtainable from this algorithm is
+therefore OPT(k−1) = k−1, whereas OPT(k) = k+M. The
+approximation ratio is thus at most (k −1)/(k + M), which
+vanishes as M grows. Hence, a β-approximate BM algorithm
+yields an IMIN approximation ratio arbitrarily close to 0. ⊓⊔
+2.4 Existing solutions revisited
+2.4.1 Existing IMIN solutions
+Given the hardness of the IMIN problem, existing IMIN solu-
+tions [52, 60] are all based on the greedy strategy. In the
+following, we ﬁrst outline the greedy framework for IMIN,
+and then detail the state-of-the-art algorithms, along with
+their empirical and theoretical limitations.
+Greedy framework Let D(u|B) = D(B ∪{u}) −D(B) be
+the marginal gain of adding u to B w.r.t. D(·). In a nutshell,
+thegreedyframeworkstartsfromanemptyblockerset B.The
+subsequent part of the algorithm consists of k iterations. At
+each iteration, it iteratively selects the node v from V \S that
+leads to the largest D(v|B) and adds it into B. After selecting
+one blocker, the probability of all edges pointing to it is set as
+0. Due to D(B) = E[IG(S)] −E[IG[V \B](S)], one feasible
+way for calculating D(B) is to compute E[IG(S)]. How-
+ever, the computation of E[IG(S)] is proved as #P-hard [7],
+whichmeansthatthecomputationof D(B)isalso#P-hard.In
+[52], Wang et al. use Monte-Carlo simulations to estimate the
+inﬂuence spread E[IG(S)] and adopt the greedy framework.
+It can solve IMIN effectively but due to the inefﬁciency of
+Monte-Carlo simulations, it incurs signiﬁcant computation
+overhead.
+State-of-the-arts In comparison with the Monte-Carlo based
+estimation method under the greedy framework, the state-
+of-the-art solutions [60] optimize the estimation for D(·).
+Instead of estimating the inﬂuence spread of S, Xie et al.
+[60] explicitly estimate the reduced inﬂuence spread based
+on dominator tree (DT) [2, 33], with the deﬁnition shown
+below.
+Deﬁnition 1 (Dominator) Given a realization φ and a source
+s, a node u is called a dominator of a node v if and only if all
+paths from s to v pass through u.
+Deﬁnition 2 (Immediate Dominator) Given a realization φ
+and a source s, a node u is said to be an immediate domina-
+tor of a node v, denoted as idom(v) = u, if and only if u
+dominates v and every other dominator of v dominates u.
+Deﬁnition 3 (Dominator Tree) Given a realization φ and a
+source s, the dominator tree of φ is induced by the edge set
+{⟨idom(u), u⟩: u ∈V \{s}} with root s.
+As presented, each DT has only a single root. Xie et al.
+[60] ﬁrst propose to replace the seed set S with a uniﬁed
+node s that exhibits an equivalent non-seed inﬂuence spread
+under the IC model, i.e., E[IG(S)] −|S| = E[IG(s)] −1. In
+particular, for each node u ∈V \S, if there are h distinct seed
+nodes pointing to node u, and each edge has a probability pi
+(1 ≤i ≤h), they remove all edges from the seed nodes
+to node u, and add an edge from node s to node u with the
+probability 1 −h
+i=1(1 −pi). Besides, Xie et al. [60] prove
+that for each u ∈V \S, the expected number of protected
+nodes by u (i.e., D(u)) equals the expected size of the subtree
+rooted at u in DT. With these results, the estimation procedure
+in [60] runs as follows.
+• Generate a number of random realizations G from G.
+• For each realization φ ∈G, apply Lengauer-Tarjan algo-
+rithm [29] to construct the DT of φ, rooting at s. For each
+node v ∈V \S, measure the size cφ(v) of subtree with
+the root v in DT.
+• For each node v ∈V \S, the estimated value ˆDs(v) of
+Ds(v) is the average value of cφ(v) in all the generated
+realizations, i.e., ˆDs(v) = 
+φ∈G cφ(v)/|G|.
+Example 1 An example of the estimation procedure is illus-
+trated, where we only generate one realization for simplicity.
+Figure1(a) shows a directed graph G = (V , E), where v0 is
+the seed node. The number associated with each edge denotes
+its propagation probability. Figure1(b) shows a random real-
+ization φ of G. The DT rooted at v0 of φ is presented in
+Fig.1(c). Then, we have ˆDs(v1) =
+ˆDs(v2) =
+ˆDs(v5) =
+ˆDs(v6) = 1, ˆDs(v3) = 3 by measuring the size of cor-
+responding subtree in DT. As v4 cannot be activated in φ,
+ˆDs(v4) = 0.
+By combining this advanced estimation procedure with
+the greedy framework, Xie et al. [60] ﬁrst propose the
+Advanced-Greedy(AG)approach.Nevertheless,theyobserve
+that some critical nodes may be missed by AG, e.g., some
+outgoing neighbors of the seed nodes. Consider Fig.1(a),
+suppose k = 2. v0 has two outgoing neighbors and if we
+directly select these two nodes as blockers, v0 cannot acti-
+vate any node. However, if we block the blockers returned
+123
+
+
+===== PAGE 7 =====
+Efﬁcient and cost-effective inﬂuence...
+Page 7 of 26
+   53 
+0
+1
+2
+3
+4
+5
+6
+1
+1
+1
+1
+1
+1
+0.1
+0.2
+0.8
+0
+(a) Graph G
+0
+1
+2
+3
+4
+5
+6
+0
+(b) Realization φ
+0
+1
+2
+3
+6
+5
+0
+(c) DT of φ
+Fig. 1 A toy directed graph
+by AG (i.e., v3 and v1), v2 cannot be protected. To address
+this issue, Xie et al. [60] further propose Greedy-Replace
+(GR), which generally consists of two stages. In the ﬁrst
+stage, the outgoing neighbors of seed nodes are stored in
+the candidate set. They iteratively select the node v from the
+candidate set with the largest ˆDs(v|B) and add it into B,
+until |B| = min{dout
+s
+, k}, where dout
+s
+denotes the number
+of nodes in the candidate set. In the second stage, they con-
+sider processing the blockers in B according to the reverse
+order of their insertion order. For each blocker in B, they ﬁrst
+remove it from B, called the replaced node. Then they select
+v from V \S with the largest ˆDs(v|B) and add it into B, called
+the current best blocker. If the replaced node is the current
+best blocker, they return B directly. Otherwise, continue the
+replacement process.
+Compared with AG, GR often achieves better result qual-
+ity. However, AG is typically more efﬁcient than GR, as the
+latter involves a two-stage selection process and may require
+multiple rounds of replacement in the second stage before
+termination.
+Limitations Despite the efﬁciency of dominator tree based
+estimation method, AG and GR still incur signiﬁcant com-
+putation overhead in practice. This is because once AG/GR
+selects a node as a blocker, that node would be removed from
+the graph. As a result, the realizations from the preceding
+round cannot be reused, and both algorithms must regener-
+ate them (in the updated graph) along with the corresponding
+DTs, incurring substantial time overhead when k is large.
+On the other hand, due to the non-submodularity of
+D(·), all the greedy-based algorithms (including AG and GR)
+cannot guarantee a (1−1/e) approximation ratio [37]; addi-
+tionally, no theoretical analysis has been conducted for them.
+Based on the notions of curvature and submodularity ratio
+[4], here we analyze the approximation guarantee for the
+greedy strategy on the non-submodular IMIN objective. The
+submodularity ratio serves as a metric to assess how closely
+the objective approximates being submodular. Formally, for
+all A, B ⊂V , the submodularity ratio of D(·) is the largest
+scalar ψ such that,
+
+ω∈A\B(D(B ∪{ω}) −D(B)) ≥ψ · (D(B ∪A) −D(B)).
+(2)
+Consider a directed graph G
+=
+(V , E) with V
+=
+{v0, v1, . . . , vn−1} and E
+= {⟨v0, v1⟩, ⟨v0, v2⟩, ⟨v1, v3⟩,
+⟨v2, v3⟩, ⟨v3, v4⟩, ⟨v3, v5⟩, . . . , ⟨v3, vn−1⟩}. The probability
+on each edge is set to 1 and v0 is the seed node. When B = ∅
+and A = {v1, v2}, the left side of Eq. (2) is equal to 2, and the
+right side of Eq. (2) is equal to n −1, i.e., 2 ≥ψ ·(n −1). As
+n gradually becomes larger, the submodularity ratio ψ of the
+IMIN objective approaches 0 inﬁnitely, which in turn causes
+the approximation ratio of the greedy method to degrade to
+0 [4]. Thus, the state-of-the-art IMIN algorithms cannot pro-
+vide any non-trivial guarantees. In this paper, we conduct
+the ﬁrst attempt to ﬁll these gaps by designing SandIMIN,
+an efﬁcient approximation algorithm for IMIN with strong
+performance guarantees.
+2.4.2 Existing BM solutions
+To the best of our knowledge, the only prior study of the BM
+problem is by Pham et al. [41], in which a scalable greedy-
+based heuristic, referred to as Base, is introduced. In what
+follows, we ﬁrst abstract the greedy framework (which we
+call Thre-Greedy) utilized by Pham et al., and then detail
+their algorithm for BM.
+Algorithm 1: Thre-Greedy (G, η, f )
+B ←∅;
+1
+while f (B) < η do
+2
+u ←arg maxv∈V \B f (v|B);
+3
+B ←B ∪{u};
+4
+return B;
+5
+As outlined in Algorithm 1, given a threshold η and a func-
+tion f , Thre-Greedy iteratively selects the element u with the
+largest f (u|B) and adds it to B, until f (B) ≥η (Lines 2-4).
+Here f (u|B) = f (B ∪{u}) −f (B) represents the marginal
+gain of adding u to B w.r.t. f (·). Thre-Greedy is practically
+effective and has been widely applied to tackle various opti-
+mization problems (e.g., set cover [57]). For any submodular
+and monotonic function f , Thre-Greedy provides the fol-
+lowing non-trivial approximation guarantees [19, 63].
+Theorem 4 ( [19, 63])
+Let B be the solution returned by Thre-Greedy(G, η, f ),
+Bi ⊆B be the set of the ﬁrst i selected elements, and τ =
+maxv∈V f (v|B|B|−1). Let Bo be the minimum-cardinality
+solution satisfying f (Bo) ≥η. If f is submodular, mono-
+tonic and upper-bounded by n, we then have f (B) ≥η
+and |B| ≤min{β1, β2} · |Bo|, where β1 = 1 + ln
+η
+τ|Bo| and
+β2 = ⌈ln nη
+n−η⌉+
+1
+|Bo|.
+To address the BM problem, Pham et al. [41] propose
+Base, an adaptation of Thre-Greedy that optimizes the esti-
+mation function ˜D(·) of D(·). That is, beginning with an
+123
+
+
+===== PAGE 8 =====
+   53 
+Page 8 of 26
+J. Wang et al.
+empty blocker set B, Base iteratively selects the node u that
+yields the maximum marginal gain ˜D(u|B) and adds it to B,
+until ˜D(B) ≥η. The estimator ˜D(·) is computed via the tree
+structure. Speciﬁcally, Base ﬁrst generates a certain number
+of random realizations. For each realization φ, it constructs
+a tree Tφ using the DFS algorithm starting from s, ensuring
+that eachvisitednodeis assignedauniqueincomingneighbor
+corresponding to the node that ﬁrst reaches it. Here s is the
+uniﬁed seed of S, constructed consistently with the method
+in [60], as we introduced in Sect.2.4. For any blocker set B,
+the authors [41] deﬁne ˜D(B) =
+1
+|L|
+
+Tφ∈L ITφ(B), where L
+denotes the set of constructed trees and ITφ(B) denotes the
+number of nodes reachable from B on Tφ.
+To avoid regenerating all trees after each new insertion
+into B, Base stores the structural information of each Tφ ∈L,
+i.e., the child and ancestor relations of its contained nodes.
+This operation, however, incurs substantial memory over-
+head, particularly when the seed s is inﬂuential. To enable
+the practical implementation, the authors [41] empirically
+adopt a relatively small sample size (i.e., 1000) for Base.
+Limitations Base is highly efﬁcient, as it generates only a
+small number of trees and employs a greedy selection pro-
+cedure that is typically fast. However, it can be veriﬁed that
+the estimator ˜D(·) is biased with respect to D(·). As a conse-
+quence, Base provides no theoretical guarantees and may
+produce suboptimal outcomes. In this paper (Sect.4), we
+ﬁrst design Heur-BM, which satisﬁes the threshold condition
+by utilizing an unbiased estimator of D(·). Building upon
+the theoretical results presented in Theorem 4, we further
+devise two bicriteria approximation algorithms (App-BM and
+App-BM+) that offer provable performance guarantees on the
+cardinality of the returned blocker set.
+2.5 Sampling techniques
+This section presents two sampling techniques that will be
+utilized in the subsequent algorithm design.
+RIS approach Reverse Inﬂuence Sampling (RIS) [5] is
+widely used for inﬂuence spread estimation. This technique
+is based on the concept of random reverse reachable (RR)
+set, which is denoted by R and generated by the following
+operations.
+• Sample a source node v uniformly at random from V and
+construct a random realization φ of G.
+• Identify the set of nodes that can reach v under φ and
+store them to R.
+Given a random RR set R whose source node is v, for each
+node u ∈V , the probability that u appears in R equals the
+probability that u can activate v. Intuitively, if a seed set S is
+highly inﬂuential, then there is a high chance that some nodes
+in S appear in a random RR set. In [5], Borgs et al. establish
+an unbiased estimator for the inﬂuence spread E[IG(S)] of
+S.
+Lemma 3 Let R be a collection of random RR sets and
+CovR(S) = 
+R∈R min{|S ∩R|, 1} be the coverage of S
+in R, we have
+E[IG(S)] = n · E[CovR(S)/|R|],
+(3)
+where the expectation is over the randomness of R.
+With this result, by generating a sufﬁcient number of random
+RR sets, we can accurately estimate E[IG(·)].
+Stopping rule for sampling The stopping rule algorithm
+[65] is to estimate a single random variable X in the range
+of [a, b] with E[X] = μX. Speciﬁcally, it repeatedly gen-
+erates samples until the sum of the observed values exceeds
+T (a, b, γ, δ), as deﬁned below.
+T (a, b, γ, δ) = 2
+γ 2 (b −a) (1 + γ )
+b −a
+b
++ γ
+3
+
+ln 2
+δ .
+(4)
+The estimator ˆμX = T (a, b, γ, δ)/θ (where θ is the num-
+ber of samples generated) is an (γ, δ)-estimate of μX, i.e.,
+Pr
+
+(1 −γ )μX ≤ˆμX ≤(1 + γ )μX
+
+≥1 −δ. This guarantee
+is derived by a martingale argument together with an Azuma–
+Hoeffding-type concentration inequality.
+3 Solutions for inﬂuence minimization
+3.1 Sandwich approximation strategy
+To solve the IMIN problem, we propose an efﬁcient approx-
+imation algorithm SandIMIN based on the sandwich frame-
+work [34, 56]. In Sect.3.1.1, we ﬁrst give the general frame-
+work of SandIMIN. Then we develop the lower and upper
+bounding functions of our objective function in Sect.3.1.2
+and 3.1.3, respectively.
+Before presenting the details, we ﬁrst propose a simple
+technique for transforming multiple seeds S into a uniﬁed
+seed s, such that E[IG(s)] = E[IG(S)] + 1. In particular, we
+create a virtual seed node s and introduce the edges with the
+propagation probability of 1 from s to every seed node v ∈S.
+Under such a setting, it is clear that minimizing E[IG(s)] is
+equivalent to minimizing E[IG(S)], where the blocker set
+is restricted to be selected from V \S. Note that s is a vir-
+tual node and does not belong to V . Different from the seed
+merging technique stated in Sect.2.4, this approach avoids
+the pre-computation of 1−h
+i=1(1−pi) for each u ∈V \S.
+123
+
+
+===== PAGE 9 =====
+Efﬁcient and cost-effective inﬂuence...
+Page 9 of 26
+   53 
+Algorithm 2: SandIMIN(G, S, k, γ, ϵ, δ)
+Input
+: The graph G = (V , E), the seed set S, the budget k
+and the error parameters γ, ϵ, δ.
+Output : The blocker set B.
+BL ←App-LB(G, S, k, γ, ϵ, δ);
+/* Section 3.3.1 */;
+1
+BU ←App-UB(G, S, k, ϵ, δ);
+/* Section 3.3.2 */;
+2
+BR ←Heur-IMIN(G, S, k);
+/* Section 3.3.3 */;
+3
+ˆIG[V \·](s) ←the (γ, δ)-estimate of E[IG[V \·](s)];
+4
+B ←arg minB∗∈{BL,BU ,BR} ˆIG[V \B∗](s);
+5
+return B;
+6
+3.1.1 Overview of SandIMIN
+Let DL, DU be the non-negative, monotonic and submod-
+ular set functions deﬁned on V , i.e., DL : 2V →R≥0
+and DU : 2V →R≥0, such that ∀B ⊆V \S, DL(B) ≤
+D(B) ≤DU(B). Algorithm 2 presents the basic workﬂow
+of SandIMIN. To begin with, it invokes the App-LB (resp.
+App-UB) approach to obtain BL (resp. BU), which offers
+(1 −1/e −ϵ)-approximation for maximizing DL(·) (resp.
+DU(·)) with at least 1 −δ probability. It then invokes Heur-
+IMIN to obtain BR, a heuristic solution for the IMIN problem.
+Finally, it returns the blocker set B∗∈{BL, BU, BR} with
+the smallest (γ, δ)-estimate of E[IG[V \B∗](s)].
+The detailed implementation of App-LB, App-UB and
+Heur-IMINwillbepresentedinSect.3.3.Let Bo
+L (resp. Bo
+U)be
+the size-k optimal solutions to the tasks of maximizing DL(·)
+(resp. DU(·)). The following theorem shows the approxima-
+tion guarantees of SandIMIN.
+Theorem 5 SandIMIN returns B that satisﬁes
+Pr
+
+D(B) ≥τ(1 −1/e −ϵ)D(Bo
+1)
+
+≥1 −3δ,
+where τ = max
+
+DL(Bo
+L)
+D(Bo
+1) ,
+D(BU )
+DU (BU )
+	
+· 1−γ
+1+γ is a data-driven
+parameter and Bo
+1 is the size-k optimal IMIN solution.
+3.1.2 Development of DL(·)
+The non-submodularity of the function D(·) arises from the
+combination effect among nodes in the blocker set B. That
+is, to prevent a node from being activated by s, we need
+to simultaneously block two or more nodes. For example,
+reconsidering Fig.1, to protect v3, we need to simultaneously
+block v1 and v2. Motivated by this, we disregard the combina-
+tion effect to obtain a submodular lower bound. Speciﬁcally,
+we only consider nodes that can be protected by blocking
+only one node in G. The lower bound DL(B) of D(B) is
+deﬁned below.
+DL(B) = 
+φ∈ p(φ) · | ∪v∈B Nφ(v)|,
+(5)
+5
+2
+11
+3
+12
+6
+7
+4
+13
+8
+9
+1
+s
+10
+Fig. 2 Example of the bounds
+where Nφ(v) is the set of nodes protected by v in φ. Lemma 4
+then proves the submodularity of DL(·)
+Lemma 4 DL(·) is monotone nondecreasing and submodu-
+lar under the IC model.
+Besides, as DL(∅) = E[IG(s)] and computing E[IG(s)] is
+#P-hard [7], the computation of DL(·) is #P-hard.
+3.1.3 Development of DU(·)
+We say a path is blocked if it contains at least one node from
+B. For each v activated by s, v can be protected if all the
+paths from s to v are blocked. Intuitively, we can obtain the
+upper bound of D(·) by relaxing the condition for nodes to be
+protected. We call that v can be alternative-protected if there
+exists one path from s to v that is blocked. Given a realization
+φ, we deﬁne R−
+φ (s) as the set of nodes (excluding S ∪{s})
+reachable from s in φ, φs as the subgraph of φ induced by
+R−
+φ (s), and Rφs(B) as the set of nodes reachable from B in
+φs. It then follows that under φ, B can alternative-protect all
+nodes in Rφs(B). Following this insight, we deﬁne an upper
+bound DU(B) of D(B) below.
+DU(B) = 
+φ∈ p(φ) · |Rφs(B)|.
+(6)
+We remark that maximizing DU(·) can be regarded as an
+instance of the inﬂuence maximization problem [24]. Hence,
+DU(·) satisﬁes the key properties of the inﬂuence spread
+function-monotonicity, submodularity, and #P-hardness of
+exact computation.
+Example 2 An example is provided to illustrate our bound-
+ing functions. As shown in Fig.2, the seed set S
+=
+{v1, v5, v10}. We ﬁrst create a uniﬁed seed s and intro-
+duce three edges, ⟨s, v1⟩, ⟨s, v5⟩, ⟨s, v10⟩, with the prop-
+agation probability of 1. Let B
+=
+{v3, v7, v12}. We
+then have DL(B)
+=
+|{v3, v4, v7, v9, v12, v13}|
+=
+6,
+D(B) = |{v3, v4, v7, v8, v9, v12, v13}| = 7, and DU(B) =
+|{v3, v4, v6, v7, v8, v9, v12, v13}| = 8.
+3.2 Bounding functions estimation
+To achieve Lines 1-2 in Algorithm 2, we ﬁrst need to com-
+pute DL(·) and DU(·). However, their computation are both
+123
+
+
+===== PAGE 10 =====
+   53 
+Page 10 of 26
+J. Wang et al.
+#P-hard. The RIS approach for inﬂuence spread estimation
+(introduced in Sect.2.5) cannot be applied to estimate our
+bounding functions. Speciﬁcally, we only need to consider
+the nodes activated by s, as only these nodes require protec-
+tion and can contribute to the bounding functions. Besides,
+the number of these nodes is unknown due to the randomness
+of propagation. We address these challenges by develop-
+ing two new sampling-based methods to estimate DL(·) and
+DU(·), as detailed in Sect.3.2.1 and Sect.3.2.2.
+3.2.1 Lower bounding function estimation
+We ﬁrst introduce the notion of CP sequence, a core compo-
+nent in our estimation method for DL(·).
+Deﬁnition 4 (CP Set & CP Sequence) Given a directed graph
+G = (V , E), a random realization φ generated on G, a seed
+set S with its uniﬁed seed s, for any v ∈V \S, a random
+common path (CP) set of v, denoted by Cφ(s, v), is the set
+of common nodes (exclude S and s) on all paths from s to v
+in φ, i.e.,
+Cφ(s, v) =
+
+u ∈ j
+i=1 Pi(s, v)
+ u /∈S ∪{s}
+
+where Pi(s, v) denotes the set of nodes on the i-th path
+from s to v in φ, and j is the total number of such paths.
+A random common path (CP) sequence, denoted by Cs
+φ,
+is the set of random CP sets of the nodes in R−
+φ (s), i.e.,
+Cs
+φ = {Cφ(s, v) | v ∈R−
+φ (s)}. Note that all CP sets in Cs
+φ
+are constructed under the same random φ.
+When the context is clear, the subscript φ in Cφ(s, v) and Cs
+φ
+can be dropped for simplicity.
+Example 3 Reconsider Fig.1, where (a) presents a graph G
+with seed node v0, and (b) demonstrates a random realization
+φ of G. We ﬁrst illustrate the random CP set of v6 as follows.
+We can ﬁnd that there are four paths between v0 and v6, i.e.,
+P1(v0, v6) = {v0, v1, v3, v6}, P2(v0, v6) = {v0, v2, v3, v6},
+P3(v0, v6) = {v0, v1, v3, v5, v6} and P4(v0, v6) = {v0, v2,
+v3, v5, v6}. The random CP set of v6 is the common nodes
+on four paths but excluding v0, i.e., C(v0, v6) = {v3, v6}. A
+random CP sequence is the set of random CP sets of nodes
+in R−
+φ (v0) = {v1, v2, v3, v5, v6}.
+Given a set Cs of random CP sequences and a blocker set
+B, deﬁne CovCs(B) be the coverage of B in Cs, i.e.,
+CovCs(B) = 
+Cs∈Cs
+
+C(s,v)∈Cs min{|B ∩C(s, v)|, 1}.
+Lemma 5 establishes an unbiased estimator of DL(B).
+Algorithm 3: CP-Gen(G, S)
+Cs
+φ ←∅;
+1
+φ ←a random realization φ generated on G;
+2
+Apply the Lengauer-Tarjan algorithm on φ to build a DT that is
+3
+rooted at s;
+for each u ∈R−
+φ (s) with the order of DFS from s do
+4
+if idom[u] /∈S then
+5
+Cφ(s, u) ←Cφ(s, idom[u]) ∪{u};
+6
+else
+7
+Cφ(s, u) ←{u};
+8
+Cs
+φ ←Cs
+φ ∪{Cφ(s, u)};
+9
+return Cs
+φ;
+10
+Lemma 5 Given a seed set S ⊆V , and the set Cs of random
+CP sequences, for any B ⊆V \S, we have
+DL(B) = E
+
+CovCs(B)/|Cs|
+
+,
+(7)
+where the expectation is over the randomness of Cs.
+This indicates that an accurate estimate of DL(B) can
+be obtained by generating sufﬁcient random CP sequences,
+which in turn necessitates an advanced CP sequence gen-
+eration approach. One feasible idea is to generate random
+CP sets separately for each v ∈R−
+φ (s), where each CP set
+is constructed by exhaustively enumerating all paths from
+s to v. This approach, however, is rather computationally
+expensive, as the number of paths between two nodes can be
+prohibitively large, and each CP sequence may include many
+CP sets.
+To alleviate this issue, we devise a simple yet more
+efﬁcient method, CP-Gen, based on the notion of DT (Def-
+inition 3). As presented in Algorithm 3, we ﬁrst generate a
+random realization φ on G and construct the correspond-
+ing DT using the Lengauer-Tarjan algorithm [29], where
+the immediate dominator idom[u] is recorded for each u ∈
+R−
+φ (s)(Lines2-3).BythedeﬁnitionofDT,foreachv ∈V \S,
+all the nodes on the path from s to v in DT, excluding S ∪{s},
+constitute Cφ(s, v). Then, leveraging the tree structure of the
+DT (i.e., each node has exactly one incoming edge), we per-
+form a single DFS traversal from s in φ, during which the
+CP set of each v ∈R−
+φ (s) is inherited from the CP set of
+idom[v], i.e., v’s incoming neighbor in the DT. All gener-
+ated CP sets are incrementally stored in the initially empty
+set Cs
+φ (Lines 4-9).
+3.2.2 Upper bounding function estimation
+Asampling-basedmethodisalsodesignedtoestimate DU(·),
+building upon the concept of the LRR set.
+Deﬁnition 5 (LRR Set) Given a directed graph G = (V , E),
+a random realization φ generated on G, a seed set S with its
+123
+
+
+===== PAGE 11 =====
+Efﬁcient and cost-effective inﬂuence...
+Page 11 of 26
+   53 
+Algorithm 4: LRR-Gen(G, S)
+φ ←a random realization φ generated on G;
+1
+v ←a node selected uniformly at random from V ′
+s;
+2
+if v ∈R−
+φ (s) then
+3
+Conduct a BFS from v along the reverse edges in φs, and
+4
+store all visited nodes in the set L;
+else L ←∅;
+5
+return L;
+6
+uniﬁed seed s, and a node v selected uniformly at random
+from V ′
+s (the set of nodes reachable from s in G, excluding
+S∪{s}), a random local reverse reachable (LRR) set, denoted
+by L, is deﬁned as the set of nodes that can reach v in φs,
+where φs is the subgraph of φ induced by R−
+φ (s).
+Deﬁne L be a set of random LRR sets, and CovL(B) =
+
+L∈L min{|B ∩L|, 1} be the coverage of B in L. Lemma 6
+provides an unbiased estimator for DU(B).
+Lemma 6 Given a seed set S ⊆V , and the set L of random
+LRR sets, for any B ⊆V \S, we have
+DU(B) = |V ′
+s| · E [CovL(B)/|L|] ,
+(8)
+where the expectation is over the randomness of L.
+The random LRR set generation method, LRR-Gen, is shown
+in Algorithm 4. We ﬁrst generate a random realization φ on
+G and randomly select a node v from V ′
+s (Lines 1-2). If v is
+reachable from s in φ, a BFS is performed from v along the
+reverse edges in φs to identify L. Otherwise, L is set to be
+an empty set (Lines 3-5).
+3.3 Detailed implementation of SandIMIN
+Building upon the proposed bounding function estima-
+tion approaches, this section elaborates on each compo-
+nent of SandIMIN. We ﬁrst present efﬁcient algorithms
+with (1 −1/e −ϵ)-approximation to maximize the lower
+(resp. upper) bounding functions, in Sect.3.3.1 (resp. Sec-
+tion3.3.2). We then propose a heuristic algorithm to solve
+IMIN in Sect.3.3.3.
+3.3.1 Lower bounding function maximization
+Even though the unbiased estimator has been established
+for DL(·), it is not sufﬁcient to obtain a good approximate
+solutionforitsmaximization.Akeychallengeliesincomput-
+ing an appropriate sample size that balances computational
+efﬁciency and estimation accuracy: too few samples may
+lead to inaccurate results, while too many can impose sig-
+niﬁcant computational overhead. In view of this, one may
+resort to OPIM-C [43], the state-of-the-art approach for inﬂu-
+ence maximization. In a nutshell, OPIM-C ﬁrst generates two
+Algorithm 5: App-LB(G, S, k, γ, ϵ, δ)
+Input
+: The graph G = (V , E), the seed set S, the budget k
+and parameters γ, ϵ, δ.
+Output : The blocker set BL.
+ON ←the set of outgoing neighbors of S;
+1
+if |ON| ≤k then
+2
+return BL = ON;
+3
+ˆIG(s) ←the (γ, δ
+6)-estimate of E[IG(s)];
+4
+OPTL ←the lower bound of DL(Bo
+L);
+5
+θmax ←
+2 ˆIG(s)
+
+(1−1
+e )
+
+ln 12
+δ +
+
+(1−1
+e )(ln(n−|S|
+k )+ln 12
+δ )
+2
+(1−γ )ϵ2OPTL
+;
+6
+θ0 ←θmax · (1 −γ )ϵ2OPTL/ ˆIG(s);
+7
+imax ←⌈log2
+θmax
+θ0 ⌉;
+8
+Generate two sets Cs
+1, Cs
+2 of θ0 random CP sequences;
+9
+a1 ←ln 3imax
+δ
+, a2 ←ln 3imax
+δ
+;
+10
+for i ←1 to imax do
+11
+BL ←Max-Coverage(Cs
+1, k);
+12
+σ L(BL) ←0;
+13
+if CovCs
+2(BL) · (1 −γ )/ ˆIG(s) ≥5a1/18 then
+14
+σ L(BL) ←
+
+(
+
+CovCs
+2 (BL)(1−γ )
+ˆIG(s)
++ 2a1
+9 −
+
+a1
+2 )2 −a1
+18
+
+1
+|Cs
+2|;
+15
+else if CovCs
+2(BL) · (1 + γ )/ ˆIG(s) ≤5a1/18 then
+16
+σ L(BL) ←
+
+(
+
+CovCs
+2 (BL)(1+γ )
+ˆIG(s)
++ 2a1
+9 −
+
+a1
+2 )2 −a1
+18
+
+1
+|Cs
+2|;
+17
+Covu
+Cs
+1(Bo
+L) ←min
+0≤i≤k
+
+CovCs
+1(Bi) +
+
+v∈max MC(Bi ,k)
+CovCs
+1(v | Bi)
+
+;
+18
+σ U(Bo
+L) ←
+
+Covu
+Cs
+1
+(Bo
+L)(1+γ )
+ˆIG(s)
++ a2
+2 +
+
+a2
+2
+2
+·
+1
+|Cs
+1|;
+19
+if σ L(BL)
+σU (Bo
+L) ≥1 −1/e −ϵ or i = imax then
+20
+return BL;
+21
+Double the sizes of Cs
+1 and Cs
+2 with new random CP
+22
+sequences;
+Algorithm 6: Max-Coverage(Cs, k)
+B ←∅;
+1
+for i ←1 to k do
+2
+u ←arg maxv∈V \S (CovCs (B ∪{v}) −CovCs (B));
+3
+B ←B ∪{u};
+4
+return B;
+5
+independent collections of samples R1 and R2 and then iden-
+tiﬁes a candidate solution by using the greedy strategy on
+R1. Afterward, it assesses whether the solution satisﬁes the
+stopping criterion deﬁned by R2. If the criterion is met, the
+solution is returned; otherwise, the sizes of R1 and R2 are
+doubled with new samples, and the above steps are repeated
+until a qualiﬁed solution is obtained. In particular, the stop-
+ping criterion of OPIM-C is M(S) ≥1−1/e −ϵ, where S is
+the candidate solution and M(·) is the function determined
+by two martingale-based concentration bounds [46].
+However, we remark that OPIM-C cannot be trivially
+adaptedtoourproblem.Themainreasonisthat OPIM-Crelies
+123
+
+
+===== PAGE 12 =====
+   53 
+Page 12 of 26
+J. Wang et al.
+on the RIS framework [5], where the corresponding unbiased
+estimator (see Eq. (3)) is different in form from ours. As a
+result, the concentration bounds leveraged by OPIM-C are not
+tailored to our setting, thereby rendering its stopping criterion
+inapplicable. In this section, we ﬁrst propose two new con-
+centration bounds (Lemma 7), based on which we derive a
+novel stopping criterion. By integrating this criterion into the
+OPIM-C framework, we propose App-LB, an efﬁcient algo-
+rithm that provides a (1 −1/e −ϵ)-approximate solution to
+the maximization of DL(·) with at least 1 −δ probability.
+Concentration bounds Given a set Cs of random CP
+sequences and a blocker set B, by deﬁning a new martingale
+sequence, we derive concentration results tailored to describe
+how close between CovCs(B)/|Cs| and DL(B). Note that we
+assume CovCs(B) ≤E[IG(s)] for each Cs ∈Cs as a neces-
+sary boundary condition for the derivation of our results. The
+condition is generally satisﬁed, given that E[CovCs(B)] =
+DL(B) ≪E[IG(s)] holds under realistic budget settings.
+Lemma 7 Given a blocker set B, a seed node s and a set of
+θ random CP sequences Cs. For any λ > 0,
+Pr
+
+CovCs (B)
+E[IG(s)] −DL(B)·θ
+E[IG(s)] ≥λ
+
+≤exp
+
+−
+λ2
+2DL (B)
+E[IG(s)] ·θ+ 2
+3 λ
+
+,
+(9)
+Pr[ CovCs (B)
+E[IG(s)] −DL(B)·θ
+E[IG(s)] ≤−λ] ≤exp
+
+−λ2·E[IG(s)]
+2DL(B)·θ
+
+.
+(10)
+App-LB algorithm The pseudocode of App-LB is shown
+in Algorithm 5. Let ON be the set of outgoing neigh-
+bors of S (Line 1). When the budget k is no less than the
+number of nodes in ON, App-LB directly returns ON as
+the blocker set (Lines 2-3). Then we calculate ˆIG(s) with
+(γ, δ
+6)-approximation by the stopping rule algorithm [65]. In
+addition, we derive the lower bound of DL(Bo
+L) and deﬁne
+the constants θmax and θ0 (Lines 4-7). Afterwards, we gen-
+erate two sets of CP sequences Cs
+1 and Cs
+2, each of size θ0,
+by repeatedly invoking CP-Gen procedure on G (Line 9).
+The subsequent part of the algorithm consists of at most imax
+iterations. In each iteration, we ﬁrst invoke Max-Coverage
+(Algorithm 6) to get a blocker set BL, i.e., ﬁnding a set of
+k nodes such that BL intersects with as many CP sequences
+as possible in Cs
+1 (Line 12). Then we derive σ L(BL) and
+σ U(Bo
+L) from Cs
+2 and Cs
+1, respectively (Lines 14-19). Specif-
+ically, σ L(BL) is the lower bound of DL(BL)/E[IG(s)]
+and σ U(Bo
+L) is the upper bound of DL(Bo
+L)/E[IG(s)]. If
+σ L(BL)/σ U(Bo
+L) ≥1−1/e−ϵ or i = imax, App-LB returns
+BL and terminates. Otherwise, the quantities of CP sequences
+in Cs
+1 and Cs
+2 will be doubled, and App-LB will proceed
+to the next iteration (Lines 20-22). Next, we will explain
+in detail how App-LB can return a solution with approxi-
+mation guarantees. Note that, when deriving θmax, σ L(BL)
+and σ U(Bo
+L), it is imperative to carefully consider the error
+associated with estimating E[IG(s)], to ensure the desired
+approximation guarantee.
+Deriving θmax. Based on previous concentration bounds
+[46], for the inﬂuence maximization problem, Tang et al.
+derive an upper bound on the sample size required to ensure
+(1 −1/e −ϵ)-approximation holds with probability at least
+1 −δ. Similarly, we derive the corresponding upper bound
+on the sample size for the IMIN problem based on our newly
+proposed concentration bounds. The following lemma pro-
+vides the setting of θmax, ensuring the correctness of App-LB
+when i = imax.
+Lemma 8 Let Cs be a set of random CP sequences, BL be a
+size-k blocker set generated by applying Max-Coverage on
+Cs, Bo
+L be the optimal solution with size-k, O PT L be the
+lower bound of DL(Bo
+L) and ˆIG(s) be the estimated value of
+E[IG(s)] with (γ, δ
+6)-approximation. For ﬁxed γ, ϵ and δ, let
+θmax =
+2 ˆIG(s)
+
+(1−1/e)
+
+ln 12
+δ +
+
+(1−1/e)(ln(n−|S|
+k )+ln 12
+δ )
+2
+(1−γ )ϵ2O PT L
+,
+if |Cs| = θ ≥θmax, then BL is (1 −1/e −ϵ)-approximate
+solution with at least 1 −δ/3 probability.
+Deriving OPTL. Let Pr[s →v] be the probability that s can
+activate v, and B∗be the set of k nodes in ON with the k
+largest probability of being activated by s. We set OPTL =
+
+v∈B∗Pr[s →v]. It can be veriﬁed that OPTL ≤DL(Bo
+L),
+since for any v ∈V \S, DL(B ∪{v})−DL(B) ≥Pr[s →v]
+always holds. Moreover, the reason for selecting ON as the
+candidate set is that the value of Pr[s →v] for each node
+v ∈ON canbecomputedefﬁciently, otherwiseit will become
+the bottleneck of the whole algorithm.
+Deriving σ L(BL)and σ U(Bo
+L). Subsequently, we show that
+σ L(BL) (resp. σ U(Bo
+L)), as deﬁned in Algorithm 5, is a
+lower bound of DL(BL)/E[IG(s)] (resp. an upper bound of
+DL(Bo
+L)/E[IG(s)]) with a high probability.
+Lemma 9 For any 0 ≤γ, ϵ, δ ≤1, we have
+Pr
+
+σ L(BL) ≤DL(BL)/E[IG(s)]
+
+≥1 −δ/3imax,
+Pr
+
+σ U(Bo
+L) ≥DL(Bo
+L)/E[IG(s)]
+
+≥1 −δ/3imax.
+Putting together The above results are sufﬁcient to estab-
+lish the approximation guarantees of App-LB. In particular,
+the algorithm has at most imax iterations. In each of the
+ﬁrst imax −1 iterations, by Lemma 9, DL(BL)
+DL(Bo
+L) ≥
+σ L(BL)
+σU (Bo
+L)
+holds with at least 1 −2/3imax probability. This ensures
+that, once
+σ L(BL)
+σU (Bo
+L) exceeds 1 −1/e −ϵ, BL achieves a
+(1−1/e−ϵ)-approximation with at least 1−2δ/3imax prob-
+ability. Meanwhile, in the last iteration, a blocker set BL is
+obtained under |Cs
+1| ≥θmax; by Lemma 8, it follows that BL
+is a (1 −1/e −ϵ)-approximate solution with at least 1 −δ/3
+probability. Using union bound, the following theorem holds.
+123
+
+
+===== PAGE 13 =====
+Efﬁcient and cost-effective inﬂuence...
+Page 13 of 26
+   53 
+Theorem 6 Given 0 ≤γ, ϵ, δ ≤1, App-LB returns BL satis-
+ﬁes Pr[DL(BL) ≥(1 −1/e −ϵ)DL(Bo
+L)] ≥1 −δ.
+Moreover, Theorem 7 shows App-LB’s time complexity.
+Theorem 7 Let α(m, n) be the inverse function of Acker-
+man’s function with parameters m and n. When
+2γ
+1+γ ≤ϵ
+and δ ≤1/2, the expected time complexity of App-LB algo-
+rithm is
+O
+
+(k ln n+ln 1/δ)E[IG(s)](α(m,n)m+E[IG(s)]2)
+(ϵ+ϵγ −2γ )2DL(Bo
+L)
++ m·ln 1/δ
+γ 2
+
+.
+3.3.2 Upper bounding function maximization
+This section then propose App-UB, an efﬁcient algorithm
+that provides a (1 −1/e −ϵ)-approximate solution to the
+maximization of DU(·) with at least 1 −δ probability. From
+an algorithmic perspective, App-UB follows a similar frame-
+work to that of App-LB, with two key differences. First, two
+independent sets of random LRR sets, L1 and L2, are gen-
+erated. Second, it adopts a different stopping condition for
+sample generation, as illustrated below.
+θmax =
+2|V ′s |
+
+(1−1/e)
+
+ln 6
+δ +
+
+(1−1/e)(ln(|V ′s|−|S|
+k
+)+ln 6
+δ )
+2
+ϵ2OPTL
+,
+θ0 = θmax · ϵ2OPTL/|V ′
+s|,
+σ L(BU) =
+
+(
+
+CovL2(BU) + 2a1
+9 −
+
+a1
+2 )2 −a1
+18
+
+· |V ′
+s |
+|L2|,
+σ U(Bo
+U) ←
+
+Covu
+L1(Bo
+U) + a2
+2 +
+
+a2
+2
+2
+· |V ′s |
+|L1|.
+To establish the approximation guarantees of App-UB, we
+introduce concentration bounds that characterize the devia-
+tion between |V ′
+s| · CovL(B)/|L| and DU(B), as presented
+in Lemma 10.
+Lemma 10 Given a blocker set B, a seed node s and a ﬁxed
+number of θ random LRR sets L. For any λ > 0,
+Pr[CovL(B) −DU (B)·θ
+|V ′s |
+≥λ] ≤exp(−
+λ2
+2DU (B)
+|V ′s|
+·θ+ 2
+3 λ),
+(11)
+Pr[CovL(B) −DU (B)·θ
+|V ′s |
+≤−λ] ≤exp(−
+|V ′
+s |λ2
+2DU (B)·θ ).
+(12)
+Leveraging Lemma 10, and following similar reasoning to
+that in Lemma 8 and Lemma 9, we can identify that in App-
+UB, i) θmax enables the blocker set BU achieves the (1 −
+1/e −ϵ)-approximation in the worst case, and ii) DU (BU )
+DU (Bo
+U ) ≥
+σ L(BU )
+σU (Bo
+U ) holds with at least 1−2/3imax probability, in each of
+the ﬁrst imax−1 iterations. These results lead to the following
+theorem.
+Theorem 8 Given 0 ≤ϵ, δ ≤1, App-UB returns BU satisﬁes
+Pr[DU(BU) ≥(1 −1/e −ϵ)DU(Bo
+U)] ≥1 −δ.
+Moreover, Theorem 9 shows App-UB’s time complexity.
+Theorem 9 When δ ≤1/2, the expected time complexity of
+App-UB is O( (k ln n+ln 1/δ)(m+n)
+ϵ2
+).
+3.3.3 A lightweight heuristic for IMIN
+Thissectionfurtherproposesalightweightandsimpleheuris-
+tic, Heur-IMIN, for the IMIN problem. Heur-IMIN selects the
+blocker in a greedy manner from ON (the outgoing neigh-
+bors of S), guided by the quality function s(·) deﬁned below,
+where deg[v] is the out-degree of v.
+s(v) = Pr[s →v] · deg[v].
+In other words, the k nodes with the largest s(·) values are
+selected as the blockers. Heur-IMIN is motivated by the fol-
+lowing observations: i) the outgoing neighbors of the seeds
+are more likely to be blockers; ii) the nodes with a relatively
+high probability of being activated by s are more likely to
+be blockers; iii) the nodes with large inﬂuence are more
+likely to be blockers. If the budget is no less than the num-
+ber of nodes in ON, we directly return ON as the blocker
+set. As indicated by Theorem 5, Heur-IMIN does not make
+any theoretical contribution to our ﬁnal algorithm SandIMIN.
+Nevertheless, it may improve the empirical performance of
+SandIMIN with almost no extra runtime cost.
+4 Solutions for blocker minimization
+This section focuses on addressing the BM problem, for
+which we develop three algorithms. We ﬁrst present a
+heuristic that ensures the threshold condition is satisﬁed
+(Sect.4.1). We then design two approximation algorithms
+with non-trivial theoretical analysis, striking a trade-off: one
+achieves a tight approximation ratio at the expense of efﬁ-
+ciency (Sect.4.2), while the other provides a slightly looser
+guarantee with improved efﬁciency (Sect.4.3). Notably, the
+approximation ratio here is deﬁned in terms of the blocker
+set cardinality.
+4.1 Heur-BM algorithm
+Given the NP-hardness of the BM problem and #P-hardness
+of computing D(·), we ﬁrst introduce the Heur-BM approach,
+aninstantiationofthe Thre-Greedy framework(Algorithm1)
+that aims to optimize the unbiased estimator ˆD(·) of D(·).
+The basic idea of Heur-BM resembles that of the existing
+BM solution Base (see Sect.2.4.2 for details). However, our
+Heur-BM approach theoretically guarantees that the thresh-
+old condition is satisﬁed with a high probability, owing to the
+unbiased nature of ˆD(·), while preserving efﬁciency through
+advanced algorithmic design.
+123
+
+
+===== PAGE 14 =====
+   53 
+Page 14 of 26
+J. Wang et al.
+At a high level, Heur-BM consists of two stages:
+(1) Blocker Selection. This stage iteratively selects u with
+the largest ˆD(u|B) and adds it to B, until the predeﬁned
+stopping criterion is satisﬁed.
+(2) Veriﬁcation. This stage veriﬁes whether the threshold
+condition (i.e., D(B) ≥η) is satisﬁed. If so, it returns
+B; otherwise, it continues selecting blockers until the
+condition is met.
+In the ﬁrst stage of Heur-BM, ˆD(·|B) is computed by a
+set of random CP sequences. Speciﬁcally, recall that the
+proposed lower bounding function DL(·) only ignores the
+combination effect of the blockers in B, thus D(v) = DL(v)
+holds for any singleton node v. Accordingly, the estimator
+established for DL(v) (Lemma 5) also serves as an unbi-
+ased estimator for D(v). That is, given a set of random CP
+sequences Cs generated on G, for each v ∈V \S, we have
+D(v) = E[CovCs(v)/|Cs|]. On this basis, let Cs
+V \B be a
+set of random CP sequences generated on induced subgraph
+G[V \B], for each v ∈V \B, it follows that ˆD(v|B) =
+CovCs
+V \B(v)/|Cs
+V \B| is an unbiased estimator for D(v|B).
+Thesecondstageof Heur-BMutilizesthe RISapproachand
+stopping rule (introduced in Sect.2.5), to check whether the
+threshold condition is satisﬁed. In particular, it maintains two
+additional collections of random RR sets, denoted by R1 and
+R2. All the RR sets in R1 (resp. R2) are generated under G
+(resp. G[V \B]). By ensuring CovR1(S) and CovR2(S) both
+exceed T (0, 1, γ, δ) (Eq. (4)), we have n · CovR1(S)/|R1|
+and n ·CovR2(S)/|R2| are (γ, δ)-estimates of E[IG(S)] and
+E[IG[V \B](S)], respectively [65], i.e.,
+Pr
+
+n · CovR1(S)/|R1| ≤(1 + γ )E[IG(S)]
+
+≥1 −δ/2,
+Pr
+
+n · CovR2(S)/|R2| ≥(1 −γ )E[IG[V \B](S)]
+
+≥1 −δ/2.
+By the union bound, it follows that
+D(B) = E[IG(S)] −E[IG[V \B](S)]
+≥n · CovR1(S)
+(1 + γ )|R1| −n · CovR2(S)
+(1 −γ )|R2| .
+holds with at least 1 −δ probability. Therefore, once
+n·CovR1(S)
+(1+γ )|R1| −
+n·CovR2(S)
+(1−γ )|R2| is not less than η, D(B) ≥η holds
+with probability at least 1 −δ.
+The pseudocode of Heur-BM is outlined in Algorithm 7.
+Initially, we generate θh random CP sequences on G and
+store them into Cs
+V \B (Lines 3-4). Then, in a similar man-
+ner to Thre-Greedy, we identify the blocker with the largest
+CovCs
+V \B(·) in each iteration (Lines 5-8). One difference
+is that, after selecting each blocker, we invoke Update-CP
+(Algorithm8)topreservetheestimationaccuracyfor D(·|B).
+Speciﬁcally, for each CP sequence that intersects with B, we
+Algorithm 7: Heur-BM(G, S, η, γ, δ)
+Input
+: The graph G, the seed set S, the threshold η, the
+parameters γ, δ, the sample size θh.
+Output : The blocker set B.
+Cs
+V \B ←∅, R1 ←∅, R2 ←∅,  ←0;
+1
+T (0, 1, γ, δ) ←Eq. (4);
+2
+// First Stage: Blocker Selection
+while |Cs
+V \B| < θh do
+3
+Cs ←CP-Gen(G, S); Cs
+V \B ←Cs
+V \B ∪{Cs};
+4
+while /θh < η do
+5
+u ←arg maxv∈V \B CovCs
+V \B (v);
+6
+B ←B ∪{u},  ← + CovCs
+V \B (u);
+7
+Update-CP(Cs
+V\B, B, S);
+8
+// Second Stage: Verification
+while CovR1(S) < T (0, 1, γ, δ) do
+9
+R ←RR-Gen(G); R1 ←R1 ∪{R} ;
+10
+while CovR2(S) < T (0, 1, γ, δ) do
+11
+R ←RR-Gen(G[V \B]); R2 ←R2 ∪{R} ;
+12
+while
+n·CovR1 (S)
+(1+γ )|R1| −
+n·CovR2 (S)
+(1−γ )|R2| < η do
+13
+u ←arg maxv∈V \B CovCs
+V \B (v);
+14
+B ←B ∪{u};
+15
+Update-CP(Cs
+V\B, B, S);
+16
+Update-RR(R2, B, T (0, 1, γ, δ));
+17
+return B;
+18
+remove it and, as compensation, generate a new random CP
+sequence on G[V \B], ensuring that all sequences in Cs
+V \B
+exclude nodes in B. The blocker selection process terminates
+once /θh ≥η is satisﬁed; the motivation for adopting this
+stopping condition will be clariﬁed shortly.
+Algorithm 8: Update-CP(Cs
+V \B, B, S)
+cnt ←0;
+1
+for Cs ∈Cs
+V \B do
+2
+if B ∩Cs̸ = ∅then
+3
+Cs
+V \B ←Cs
+V \B\{Cs}; cnt ←cnt + 1;
+4
+for i ←1 to cnt do
+5
+Cs ←CP-Gen(G[V \B], S); Cs
+V \B ←Cs
+V \B ∪{Cs};
+6
+Algorithm 9: Update-RR(R2, B, T (0, 1, γ, δ))
+for R ∈R2 do
+1
+if B ∩R̸ = ∅then R2 ←R2\{R};
+2
+while CovR2(S) < T (0, 1, γ, δ) do
+3
+R ←RR-Gen(G[V \B]); R2 ←R2 ∪{R} ;
+4
+Next, we repeatedly generating RR sets on G and
+G[V \B], which are stored in R1 and R2 respectively, until
+123
+
+
+===== PAGE 15 =====
+Efﬁcient and cost-effective inﬂuence...
+Page 15 of 26
+   53 
+the coverage of S in both exceeds T (0, 1, γ, δ) (Lines 9-12).
+Next, if the condition in Line 13 is satisﬁed, which implies
+that D(B) ≥η holds with high probability, the blocker set B
+is returned. Otherwise, we proceed to select the blocker also
+guided by CovCs
+V \B(·), while invoking both Update-CP and
+Update-RR, until the stopping condition is satisﬁed (Lines
+13-17). Update-RR (Algorithm 9) is to preserve the estima-
+tion accuracy for E[IG[V \B](S)] by updating R2: it removes
+RR sets intersecting with B and continues generating new
+ones on G[V \B] until CovR2(S) ≥T (0, 1, γ, δ).
+As observed, both stages of Heur-BM involve selecting
+blockers, but the second stage additionally requires execut-
+ing Update-RR, which incurs extra computational cost. This
+motivates the introduction of the ﬁrst stopping condition in
+Line 5 (i.e., /θh ≥η). Speciﬁcally, /θh can be regarded
+as a rough (biased) estimate of D(B), as illustrated by the
+following expression.
+D(B) =
+|B|
+
+i=1
+D(uh
+i |Bh
+i−1) ≈
+|B|
+
+i=1
+ˆD(uh
+i |Bh
+i−1)
+=
+|B|
+
+i=1
+CovCs
+V \Bh
+i−1
+(uh
+i )/θh = /θh.
+where uh
+i is the i-th blocker selected by Heur-BM, and Bh
+i =
+{uh
+1, uh
+2, . . . , uh
+i } is the set of the ﬁrst i selected blockers. In
+the experiments, we empirically set θh = 10000, which suf-
+ﬁces to ensure the above approximate equality holds in most
+cases. As a result, once /θh ≥η holds, D(B) is likely to
+be close to η. This prevents the selection of excessive block-
+ers, while reducing the number of iterations in the second
+stage, i.e., the number of Update-RR invocations, thereby
+enhancing overall efﬁciency.
+Theoretical analysis As discussed previously, with at least
+1 −δ probability,
+n·CovR1(s)
+(1+γ )|R1| −
+n·CovR2(s)
+(1−γ )|R2| ≤D(B) holds.
+This leads to the following theorem.
+Theorem 10 Heur-BM returns B such that D(B) ≥η holds
+with at least 1 −δ probability.
+Besides, Heur-BM’s time complexity is shown below.
+Theorem 11 Let α(m, n) be the inverse function of Ack-
+erman’s function with parameters m and n, and vm =
+arg maxv∈V E[IG(v)]. The expected time complexity of Heur-
+BM is
+O
+
+|V ′
+s|
+
+θh(m · α(m, n) + E[IG(s)]2) + ln 1
+δ mE[IG(vm)]
+γ 2|S|
+
+.
+4.2 App-BM algorithm
+While Heur-BM satisﬁes the threshold condition (Theo-
+rem 10), the non-submodularity of D(·) can lead any
+greedy-basedmethod,includingHeur-BM,toreturnablocker
+set arbitrarily larger than the optimum.
+Lemma 11 For any method that greedily blocks the node of
+largest marginal gain w.r.t. D(·) until the threshold condition
+is met, the ratio |B|/|Bo
+2| for its returned blocker set B is
+unbounded, even when the objective is computed exactly.
+Proof Consider the following instance, in which all edge
+probabilities equal 1, so that all marginal gains are exact. The
+seed s has edges to nodes a and b, each of which has edges
+to all of r1, . . . ,rM; in addition, s has edges to w1, . . . , wL,
+and each wi has an edge to a further node w′
+i. We set η = M
+with M ≥2L + 2.
+We ﬁrst determine |Bo
+2|. Blocking a or b alone protects
+only that node, as every r j stays reachable through the other,
+so D({a}) = D({b}) = 1; blocking both disconnects every
+r j from s, giving D({a, b}) = M + 2. Since no single node
+protects more than two nodes (wi protects wi and w′
+i) while
+η = M > 2, the threshold cannot be met by a single blocker
+but is met by {a, b}. It then follows that |Bo
+2| = 2.
+The greedy method ﬁrst blocks w1, . . . , wL, as each wi
+has the maximum marginal gain 2 while every other node has
+gain 1, reaching D = 2L. It then continues until D(B) ≥
+η = M. The remaining deﬁcit is η −2L = M −2L ≥2, yet
+every still-available node gains at most 1 when blocked; the
+next pick therefore raises D to at most 2L +1 < η, so at least
+two further blockers are required. Hence |B| ≥L + 2, and
+|B|/|Bo
+2| ≥(L + 2)/2 →∞as L →∞. This completes
+the proof.
+⊓⊔
+To address this limitation, this section designs App-BM,
+a bicriteria approximation algorithm for the BM problem.
+The main idea of App-BM is to optimize the submodu-
+lar upper bound DU(·) using the Thre-Greedy framework
+(Algorithm 1). Note that while this idea appears similar to
+that of the sandwich strategy, a key difference is that our goal
+here is to minimize the cardinality of the selected blocker
+set, whereas the sandwich strategy is designed for maximiza-
+tion problems. This intrinsically renders its theoretical results
+inapplicable.
+As shown in Algorithm 10, App-BM ﬁrst generates a cer-
+tain number of LRR sets to compute the unbiased estimator
+ˆDU(·) of DU(·), according to Lemma 6. Then, Thre-Greedy
+is invoked to maximize ˆDU(·) until ˆDU(B) ≥(1 + μ)η,
+where μ is a input error parameter.
+Theoretical analysis App-BM is much simpler than Heur-
+BM, but establishing its approximation guarantees is far from
+trivial. Let Bo
+2 (resp. B∗
+2) be the solution with the smallest
+cardinality that satisﬁes D(Bo
+2) ≥η (resp. DU(B∗
+2) ≥η).
+Besides, let ua
+i be the i-th blocker selected by App-BM, and
+Ba
+i = {ua
+1, ua
+2, . . . , ua
+i } be the blockers selected in the ﬁrst
+i iterations. At a high level, we bound the cardinality of
+App-BM’s solution using the submodular-cover guarantee
+123
+
+
+===== PAGE 16 =====
+   53 
+Page 16 of 26
+J. Wang et al.
+Algorithm 10: App-BM(G, S, η, μ, δ)
+Input
+: The graph G, the seed set S, the threshold η, and the
+error parameters μ, δ.
+Output : The blocker set B, the sample collection L.
+L ←∅;
+1
+θa ←
+( 2
+3 μ+2)|V ′
+s | ln
+ 3(⌈η⌉−1)
+δ
+·(
+en
+⌈η⌉−1 )⌈η⌉−1
+ημ2
+;
+2
+while |L| < θa do
+3
+L ←LRR-Gen(G, S); L ←L ∪{L};
+4
+ˆDU(·) = |V ′
+s| · CovL(·)/θa;
+5
+B ←Thre-Greedy(G, (1 + μ)η, ˆDU);
+6
+return (B, L);
+7
+(Theorem 4), which we adapt in two respects. First, that
+guarantee is relative to B∗
+2, whereas we seek a bound rel-
+ative to the true optimum Bo
+2. Since DU ≥D makes the
+threshold easier to meet, |B∗
+2| ≤|Bo
+2|, and the bound carries
+over directly. Second, the guarantee assumes the exact DU,
+whereas App-BM optimizes only its estimator ˆDU. Account-
+ing for this approximation is the crux of the analysis, which
+we handle through three lemmas (Lemmas 12–14) before
+assembling them into Theorem 12.
+Intuitively, the algorithm stops at the slightly inﬂated tar-
+get(1+μ)η ratherthanη,leavingasafetymarginthatabsorbs
+the small estimation error. The ﬁrst lemma then guarantees
+that, with enough samples, App-BM’s solution reaches the
+threshold under DU.
+Lemma 12 If |L| ≥θa, then with probability at least 1−δ/3,
+the solution B returned by Thre-Greedy(G, (1 + μ)η, ˆDU)
+satisﬁes DU(B) ≥η.
+Proof We call B is bad if DU(B) < η. To prove this lemma,
+we will show that each bad blocker set B′ has at most
+δ/3⌈η⌉−1
+ki=1
+n
+ki
+
+probability to be returned by Thre-Greedy
+(G, (1 + μ)η, ˆDU).
+This is sufﬁcient to establish the lemma since there exists
+at most ⌈η⌉−1
+ki=1
+n
+ki
+
+bad blocker sets, and by the union bound,
+there is at least 1 −δ/3 probability that none of them is
+returned.
+Deﬁne λ1 = |L| · μη
+|V ′s | and km = ⌈η⌉−1, we have
+Pr[ ˆDU(B′) ≥(1 + μ)η] ≤Pr[ ˆDU(B′) −DU(B′) ≥μη]
+= Pr[CovL(B′) −|L| · DU(B′)
+|V ′s|
+≥λ1]
+≤exp
+⎛
+⎝
+−λ2
+1
+2λ1
+3 + 2DU (B′)|L|
+|V ′s |
+⎞
+⎠≤
+δ
+3km · (en/km)km ,
+where the ﬁrst inequality is due to DU(B′) < η, the second
+inequality is due to Eq. (11), the third inequality is due to
+|L| ≥θa and DU(B′) < η. Also, we have
+km
+
+ki=1
+n
+ki
+
+≤
+km
+
+ki=1
+nki
+ki! ≤km · (en/km)km.
+where the second inequality is due to ki! ≥( ki
+e )ki .
+On this basis, we have
+Pr[ ˆDU(B′) ≥(1 + μ)η] ≤
+δ
+3km(en/km)km ≤
+δ
+3 km
+ki =1 ( n
+ki).
+This completes the proof.
+⊓⊔
+Moreover, since ˆDU is unbiased, sufﬁcient samples make
+it accurate, which gives the following lemma.
+Lemma 13 Deﬁne
+(η, μ, δ) = 2|V ′
+s| ln 1
+δ /ημ2.
+(13)
+If |L| ≥(η, μ, δ/3), then we have ˆDU(B∗
+2) ≥(1 −
+μ)DU(B∗
+2) holds with at least 1 −δ/3 probability.
+Proof Let λ2 = μ|L|DU (B∗
+2 )
+|V ′s |
+, we have
+Pr[ ˆDU(B∗
+2) ≤(1 −μ)DU(B∗
+2)]
+= Pr[CovL(B∗
+2) −|L|DU(B∗
+2)
+|V ′s|
+≤−λ2]
+≤exp
+
+−
+λ2
+2|V ′
+s|
+2DU(B∗
+2) · |L|
+
+≤exp
+
+−μ2|L|η
+2|V ′s|
+
+≤δ/3,
+where the ﬁrst inequality is due to Eq. (12), the second
+inequality is due to DU(B∗
+2) ≥η, and the third inequality is
+due to |L| ≥(η, μ, δ/3).
+⊓⊔
+It can be veriﬁed that θa > (η, μ, δ/3). Thus the results in
+Lemma 13 also hold when |L| ≥θa. Now let Ba
+q = B be the
+solution returned by App-BM (at |L| = θa), with |Ba
+q | = q,
+and let Ba
+p be the output of Thre-Greedy(G, (1 −μ)η, ˆDU)
+on the same LRR sets, with |Ba
+p| = p. Intuitively, since the
+targets (1+μ)η and (1−μ)η differ only slightly, the greedy
+procedure selects nearly the same blockers in both runs. The
+following lemma formalizes this by bounding the difference
+between p and q.
+Lemma 14 For any 0 < μ ≤
+E[IG(S)]−|S|−η
+E[IG(S)]−|S|+η+2|V ′s |, q ≤p+1
+holds with at least 1 −δ/3 probability when |L| = θa.
+Proof To prove this lemma, we consider two cases: i)
+ˆDU(Ba
+p) ≥(1 + μ)η; and ii) ˆDU(Ba
+p) < (1 + μ)η. For
+the ﬁrst case, we have p = q. For the second case, since
+|L| = θa and DU(V ′
+s) = E[IG(S)] −|S| ≥η, similar to
+123
+
+
+===== PAGE 17 =====
+Efﬁcient and cost-effective inﬂuence...
+Page 17 of 26
+   53 
+the reasoning in Lemma 13, we can derive that the following
+equation holds with at least 1 −δ/3 probability.
+ˆDU(V ′
+s) ≥(1 −μ)DU(V ′
+s).
+(14)
+Assuming that Eq. (14) holds. For any i, we have
+(1 −μ)(E[IG(S)] −|S|) −ˆDU(Ba
+i )
+=(1 −μ)DU(V ′
+s) −ˆDU(Ba
+i ) ≤ˆDU(V ′
+s) −ˆDU(Ba
+i )
+≤
+
+v∈V ′s \Ba
+i
+( ˆDU(Ba
+i ∪{v}) −ˆDU(Ba
+i ))
+≤|V ′
+s| · ( ˆDU(Ba
+i+1) −ˆDU(Ba
+i )).
+(15)
+where the second inequality is due to the submodularity of
+ˆDU(·). On this basis, we can further derive that
+ˆDU(Ba
+p+1) −ˆDU(Ba
+p)
+≥
+(1 −μ)(E[IG(S)] −|S|) −ˆDU(Ba
+p)
+|V ′s|
+≥(1 −μ)(E[IG(S)] −|S|) −(1 + μ)η
+|V ′s|
+≥2μη,
+where the second inequality is due to ˆDU(Ba
+p) < (1 + μ)η,
+and the third inequality is due to μ ≤
+E[IG(S)]−|S|−η
+E[IG(S)]−|S|+η+2|V ′s |.
+We then have
+ˆDU(Ba
+p+1) ≥ˆDU(Ba
+p) + 2μη
+≥(1 −μ)η + 2μη ≥(1 + μ)η.
+Thus we have p + 1 ≥q. Recall that Eq. (14) holds with at
+least 1 −δ/3 probability, the lemma holds.
+⊓⊔
+Main results for App-BM. Given a sample collection L and
+its associated estimator ˆDU(·), let Bμ
+L be the minimum-
+cardinality solution that satisﬁes ˆDU(Bμ
+L) ≥(1 −μ)η and
+τ(B, L) = maxv∈V ˆDU(v|B|B|−1). Combining the three
+lemmas with the submodular-cover bound (Theorem 4)
+yields the main guarantee of App-BM.
+Theorem 12 For any 0 < μ ≤
+E[IG(S)]−|S|−η
+E[IG(S)]−|S|+η+2|V ′s | and δ ∈
+(0, 1), App-BM returns (B, L) such that
+D(B) ≥
+D(B)
+DU(B) · η and |B| ≤min{ ˜β1, ˜β2} · |Bo
+2| + 1
+holds with at least 1 −δ probability, where
+˜β1 = 1 + ln
+(1−μ)η
+τ(B,L)·|Bμ
+L |≤1 + ln |L|,
+˜β2 =
+
+ln nη
+n−η
+
++
+1
+|Bo
+2|≤2 ln n + 2.
+Proof By applying the union bound to Lemmas 12, 13,
+and 14, we obtain that the following equations hold simulta-
+neously with at least 1 −δ probability if |L| = θa.
+DU(B) ≥η
+(16)
+ˆDU(B∗
+2) ≥(1 −μ)DU(B∗
+2)
+(17)
+q ≤p + 1.
+(18)
+Assuming all these equations hold. By Eq. (16), we have
+D(B) =
+D(B)
+DU(B) · DU(B) ≥
+D(B)
+DU(B) · η.
+By Eq. (17), ˆDU(B∗
+2) ≥(1 −μ)DU(B∗
+2) ≥(1 −μ)η holds.
+Then, it follows that |Bμ
+L| ≤|B∗
+2|. In addition, by the deﬁ-
+nition of Bo
+2 and B∗
+2, it can veriﬁed that |B∗
+2| ≤|Bo
+2|. As a
+result, we have |Bμ
+L| ≤|Bo
+2|.
+Recall that Ba
+p is the solution returned by Thre-Greedy
+(G, (1 −μ)η, ˆDU), by Theorem 4, we have
+|Ba
+p| ≤(1 + ln
+(1 −μ)η
+maxv∈V ˆDU(v|Ba
+p−1) · |Bμ
+L|
+) · |Bμ
+L|
+≤(1 + ln
+(1 −μ)η
+τ(B, L) · |Bμ
+L|) · |Bμ
+L|, and
+|Ba
+p| ≤⌈ln
+nη
+n −η⌉|Bμ
+L| + 1.
+Combining the above two equations with Eq. (18) and
+|Bμ
+L| ≤|Bo
+2|, we have
+|B| = |Ba
+q | ≤|Ba
+p| + 1 ≤(1 + ln
+(1 −μ)η
+τ(B, L)|Bμ
+L|) · |Bμ
+L| + 1
+≤˜β1|Bo
+2| + 1,
+and |B| ≤|Ba
+p| + 1 ≤⌈ln
+nη
+n −η⌉|Bμ
+L| + 2
+≤⌈ln
+nη
+n −η⌉|Bo
+2| + 2 = ˜β2|Bo
+2| + 1.
+It remains to verify the upper bounds on ˜β1 and ˜β2. Let
+gmax = maxv∈V ˆDU(v) be the maximum single-node esti-
+mate on L. For ˜β1: as Bμ
+L is a minimum-cardinality set with
+ˆDU(Bμ
+L) ≥(1 −μ)η, the submodularity of the estimator
+ˆDU(·) gives (1 −μ)η ≤
+ˆDU(Bμ
+L) ≤
+v∈Bμ
+L ˆDU(v) ≤
+|Bμ
+L| · gmax. Moreover, since ˆDU(·) = |V ′
+s| · CovL(·)/|L|
+with CovL(·) integer-valued, the positive last marginal gain
+satisﬁes τ(B, L) ≥|V ′
+s|/|L| ≥gmax/|L|. As a result, ˜β1 ≤
+1 + ln
+gmax
+τ(B,L) ≤1 + ln |L|. For ˜β2: since η < E[IG(S)] −|S|
+and E[IG(S)] ≤n, we have n −η > |S| ≥1 and η < n, so
+⌈ln nη
+n−η⌉≤2 ln n + 1; thus ˜β2 ≤2 ln n + 2 by |Bo
+2| ≥1. ⊓⊔
+The time complexity of App-BM is established below.
+123
+
+
+===== PAGE 18 =====
+   53 
+Page 18 of 26
+J. Wang et al.
+Theorem 13 Let vo = arg maxv∈V DU(v). The expected
+runtime of App-BM is O(
+( 1
+η ln η
+δ +ln n
+η )mDU (vo)
+μ
+).
+4.3 App-BM+ algorithm
+Algorithm 11: App-BM+(G, S, η, δ)
+Input
+: The graph G, the seed set S, the threshold η, and the
+parameter δ.
+Output : The blocker set B, the sample collection L1 and the
+parameter μ.
+Initialize B ←∅, Bu
+p ←∅, Bu
+q ←∅, L1 ←∅;
+1
+˜μ ←
+1
+3|V ′s |−|S|+η , μ ←0.5;
+2
+θmax ←
+( 2
+3 ˜μ+2)|V ′
+s | ln
+ 9(⌈η⌉−1)
+δ
+·(
+en
+⌈η⌉−1 )⌈η⌉−1
+η ˜μ2
+;
+3
+(η, μ, δ
+9) ←Eq. (13); T (0, 1, μ, 2
+9δ) ←Eq. (4);
+4
+while true do
+5
+while |L1| < (η, μ, δ
+9) do
+6
+L ←LRR-Gen(G, S); L1 ←L1 ∪{L};
+7
+ˆDU(·) = |V ′
+s| · CovL1(·)/|L1|;
+8
+if |L1| ≥θmax then
+9
+B ←Thre-Greedy(G, (1 + ˜μ)η, ˆDU);
+10
+return (B, L1, ˜μ);
+11
+Bu
+p ←Thre-Greedy (G, (1 −μ)η, ˆDU);
+12
+Bu
+q ←Thre-Greedy (G, (1 + μ)η, ˆDU);
+13
+// Condition I
+if |Bu
+q | ≤2|Bu
+p| then
+14
+L2 ←∅;
+15
+while CovL2(Bu
+q ) < T (0, 1, μ
+2 , 2
+9δ) do
+16
+L ←LRR-Gen(G, S); L2 ←L2 ∪{L};
+17
+// Condition II
+if |V ′
+s| · CovL2(Bu
+q )/|L2| ≥(1 + μ/2) · η then
+18
+B ←Bu
+q ; return (B, L1, μ);
+19
+else
+20
+μ ←μ/
+√
+2;
+21
+L1 ←L1 ∪L2, δ ←δ/2;
+22
+As established by Theorem 12, App-BM provides a non-
+trivial bicriteria approximation guarantee for BM problem.
+Nevertheless, one notable drawback of App-BM is that the
+input estimation error μ is limited by an upper bound
+E[IG(S)]−|S|−η
+E[IG(S)]−|S|+η+2|V ′s |, which can be very small due to the
+potentially large value of |V ′
+s|. Accordingly, as indicated by
+the setting of θa, a substantial number of random LRR sets
+would be required, making App-BM impractical and primar-
+ily of theoretical interest.
+To resolve this issue, we design App-BM+, a more efﬁ-
+cient bicriteria approximation approach that eliminates the
+restriction on μ. In a nutshell, App-BM+ also adopts Thre-
+Greedy (Algorithm 1) to optimize ˆDU(·). The key difference
+lies in its use of a trial-and-error strategy to dynamically
+decrease μ until the pre-deﬁned stopping conditions are sat-
+isﬁed. This adaptive mechanism results in a relatively large
+ﬁnal μ, thereby ensuring a practical sample size.
+As outlined in Algorithm 11, App-BM+ works iteratively,
+with μ initially set to 0.5. At the start of each iteration, a
+number of random LRR sets are generated (if needed) and
+stored in L1 (Lines 6-7). Guided by the estimator derived
+from L1, Thre-Greedy is then invoked twice to derive Bu
+p
+and Bu
+q , using thresholds (1 −μ)η and (1 + μ)η, respec-
+tively (Lines 12-13). Bu
+q is the candidate solution, while Bu
+p
+is the auxiliary solution used to evaluate whether μ is suf-
+ﬁciently small, based on Condition I in Line 14. If the
+condition is satisﬁed, we further check whether DU(Bu
+q ) ≥η
+holds, based on Condition II (Lines 15–19). In par-
+ticular, we ﬁrst initialize an empty collection L2, and then
+repeatedly generate random LRR sets and store them into L2
+until CovL2(Bu
+q ) ≥T (0, 1, μ
+2 , 2δ
+9 ). Note that, the mainte-
+nance of two independent sample collections is essential, as
+reusing one for both identifying Bu
+q and computing ˆDU(Bu
+q )
+would introduce estimation bias. Based on the stopping
+rule for sampling [65] (see Sect.2.5), the resulting estimate
+provides an ( μ
+2 , 2δ
+9 )-approximation to DU(Bu
+q ). Hence, sat-
+isfying Condition II (Line 18) implies DU(Bu
+q ) ≥η
+holds with high probability; in this case, Bu
+q is returned. In
+contrast, when Condition I fails to hold, the value of μ
+is reduced by a factor of
+√
+2 (Lines 20-21). Finally, the sam-
+ple collection L2 is merged into L1 and δ is halved, aiming to
+ﬁnd a better candidate solution in the next iteration (Line 22).
+The total number of samples is capped by θmax (initialized
+in Line 3); once |L1| exceeds θmax, the solution produced by
+Thre-Greedy is directly returned (Lines 9-11).
+Theoretical analysis The approximation guarantee of App-
+BM+ follows from analyzing its two termination cases.
+The ﬁrst, when the sample cap is reached, is handled by
+Lemma 15; the second, when both stopping conditions are
+met, by Lemma 18, which builds on Lemmas 16 and 17,
+establishing that the estimates remain accurate across all iter-
+ations. Combining the two cases yields the overall guarantee
+of App-BM+ (Theorem 14).
+We begin with the ﬁrst case, where App-BM+ reduces to
+App-BM with μ = ˜μ and thus inherits its guarantee from
+Theorem 12.
+Lemma 15 Let (B, L1, ˜μ) denote the tuple returned by App-
+BM+ when |L1| ≥θmax. For any η ∈(0, E[IG(S)]−|S|−1],
+we have
+D(B) ≥
+D(B)
+DU (B) · η and |B| ≤⌈ln nη
+n−η⌉|Bo
+2| + 2
+holds with at least 1 −δ/3 probability.
+Proof It can be veriﬁed that ˜μ ≤
+E[IG(S)]−|S|−η
+E[IG(S)]−|S|+η+2|V ′s |. Then,
+by Theorem 12, the lemma holds.
+⊓⊔
+123
+
+
+===== PAGE 19 =====
+Efﬁcient and cost-effective inﬂuence...
+Page 19 of 26
+   53 
+To facilitate the analysis of the second case, we establish
+two supporting lemmas, both following from the unbiased-
+ness of the estimators and the union bound.
+Lemma 16 For all iterations, with at least 1−2δ
+9 probability,
+ˆDU(B∗
+2) ≥(1 −μ)DU(B∗
+2) holds.
+Proof In the i-iteration of App-BM+, we have |L1| ≥
+(η, μ,
+δ
+9·2i−1 ). By Lemma 13, it follows that
+Pr[ ˆDU(B∗
+2) ≥(1 −μ)DU(B∗
+2)] ≥1 −δ/(9 · 2i−1).
+Let imax be the maximum number of iterations performed by
+App-BM+. We have 1−imax
+i=1
+δ
+9·2i−1 ≥1−2δ
+9 . By the union
+bound, the lemma holds.
+⊓⊔
+Lemma 17 For all iterations that Condition I is met, |V ′
+s| ·
+CovL2(Bu
+q )/|L2| ≤(1 + μ/2)DU(Bu
+q ) holds with at least
+1 −2δ
+9 probability.
+Proof In App-BM+’s i-iteration that Condition I is met,
+we have CovL2(Bu
+q ) ≥T (0, 1, μ
+2 ,
+2δ
+9·2i−1 ). By the stopping
+rule for sampling [65], we have
+Pr
+
+|V ′
+s|CovL2(Bu
+q )
+|L2|
+≤(1 + μ
+2 )DU(Bu
+q )
+ 
+≥1 −
+δ
+9 · 2i−1 .
+Similar to reasoning in Lemma 16, the lemma holds.
+⊓⊔
+Based on these, we establish the following guarantee for
+the second case. Intuitively, Condition II veriﬁes the returned
+set on fresh samples to conﬁrm that it clears the threshold,
+while Condition I caps its size at twice that of the lower-
+threshold greedy run, which is itself near-optimal by the
+submodular-cover guarantee.
+Lemma 18 Let (B, L1, μ) denote the tuple returned by App-
+BM+ when B satisﬁes both Condition I and Condition II. We
+have
+D(B) ≥
+D(B)
+DU (B) · η and |B| ≤2 min{ ˆβ1, ˆβ2} · |Bo
+2|
+holds with at least 1 −4δ
+9 probability, where ˆβ1 = 1 +
+ln
+(1−μ)η
+τ(B,L1)·|Bμ
+L1| and ˆβ2 = ⌈ln nη
+n−η⌉+
+1
+|Bo
+2|.
+Proof By Lemmas 16, 17 and the union bound, for all iter-
+ations that Condition I is met, the following equations
+hold with at least 1 −4δ
+9 probability.
+ˆDU(B∗
+2) ≥(1 −μ)DU(B∗
+2),
+(19)
+|V ′
+s| · CovL2(Bu
+q )/|L2| ≤(1 + μ/2)DU(Bu
+q ).
+(20)
+Assuming these equations hold simultaneously. By Eq. (20),
+when Condition II is satisﬁed, we have
+DU(B) = DU(Bu
+q ) ≥
+|V ′
+s| · CovL2(Bu
+q )
+|L2|(1 + μ/2)
+≥η.
+On this basis, we then have D(B) ≥
+D(B)
+DU (B) · η. In addition,
+based on Eq. (19) and applying reasoning similar to that in
+Theorem 12, we can derive |Bμ
+L1| ≤|Bo
+2|. Moreover, by
+Theorem 4, it follows that
+|Bu
+p| ≤(1 + ln
+(1 −μ)η
+maxv∈V ˆDU(v|Bu
+p−1) · |Bμ
+L1|
+) · |Bμ
+L1|
+≤(1 + ln
+(1 −μ)η
+τ(B, L1) · |Bμ
+L1|) · |Bμ
+L1|, and
+|Bu
+p| ≤⌈ln
+nη
+n −η⌉· |Bμ
+L1| + 1
+When Condition I is met, we have |Bu
+q | ≤2|Bu
+p|. By
+combining all the above results, we have
+|B| = |Bu
+q | ≤2|Bu
+p| ≤2(1 + ln
+(1 −μ)η
+τ(B, L1) · |Bμ
+L1|)|Bμ
+L1|
+≤2(1 + ln
+(1 −μ)η
+τ(B, L1) · |Bμ
+L1|)|Bo
+2|, and
+|B| ≤2|Bu
+p| ≤2(⌈ln
+nη
+n −η⌉+
+1
+|Bo
+2|)|Bo
+2|
+This completes the proof.
+⊓⊔
+Main results for App-BM+. Finally, by jointly considering
+the theoretical results of both cases, we establish the perfor-
+mance guarantees of App-BM+.
+Theorem 14 For any η ∈(0, E[IG(S)] −|S| −1], App-BM+
+returns (B, L1, μ) such that
+D(B) ≥
+D(B)
+DU (B) · η and |B| ≤max{min{2 ˆβ1, 2 ˆβ2}, ˆβ3}|Bo
+2|
+holds with at least 1 −δ probability, where
+ˆβ1 = 1 + ln
+(1−μ)η
+τ(B,L1)·|Bμ
+L1|≤1 + ln |L1|,
+ˆβ2 =
+
+ln nη
+n−η
+
++
+1
+|Bo
+2|≤2 ln n + 2,
+ˆβ3 =
+
+ln nη
+n−η
+
++
+2
+|Bo
+2|≤2 ln n + 3.
+Proof The performance guarantee follows by applying the
+union bound over the results of Lemmas 15 and 18. The upper
+bounds on the three factors follow by the same arguments as
+in the proof of Theorem 12.
+⊓⊔
+In addition, the time complexity of App-BM+ is established
+by the following theorem.
+123
+
+
+===== PAGE 20 =====
+   53 
+Page 20 of 26
+J. Wang et al.
+Table 2 Statistics of datasets
+Dataset
+Type
+|V |
+|E|
+Avg. deg
+EmailCore (EC)
+directed
+1,005
+25,571
+49.6
+Facebook (FB)
+undirected
+4,039
+88,234
+43.7
+Wiki-Vote (WV)
+directed
+7,115
+103,689
+29.1
+EmailAll (EA)
+directed
+265,214
+420,045
+3.2
+DBLP (DB)
+undirected
+317,080
+1,049,866
+6.6
+Twitter (TT)
+directed
+81,306
+1,768,149
+59.5
+Stanford (SF)
+directed
+281,903
+2,312,497
+16.4
+Youtube (YT)
+undirected
+1,134,890
+2,987,624
+5.3
+Pokec (PK)
+directed
+1,632,803
+30,622,564
+37.5
+Theorem 15 Let vo = arg maxv∈V DU(v). The expected
+time complexity of App-BM+ is
+O
+( 1
+η ln η
+δ + ln n
+η)2|V ′
+s|3E[IG(S)]DU(vo)
+ln 1
+δ
+
+.
+Remark 1 Since min{2 ˆβ1, 2 ˆβ2} ≤2 ˆβ2 and ˆβ3 ≤2 ˆβ2,
+the cardinality factor in Theorem 14 is bounded by 2 ˆβ2 ≤
+4 ln n + 4. That is, with probability at least 1 −δ, App-BM+
+admits the following cardinality guarantee:
+|B| ≤(4 ln n + 4) |Bo
+2| = O(ln n) · |Bo
+2|.
+Notably, despite the non-submodularity of our objective,
+this cardinality ratio matches the order of the best possi-
+ble guarantee for the submodular cover problem [13]. To
+the best of our knowledge, within the body of work on
+inﬂuence analysis, App-BM+ is the ﬁrst practical approxima-
+tion algorithm that provides strong performance guarantees
+for a non-submodular cover problem, i.e., minimizing the
+solution cardinality subject to a threshold constraint on a non-
+submodular objective. We believe that App-BM+, together
+with our theoretical analysis, is of independent interest and
+may be adapted to tackle other problems.
+Remark 2 While this paper focuses on the IC model, the pro-
+posed techniques for both IMIN and BM problems naturally
+extend to another widely studied model, the linear threshold
+(LT) model [24]. Speciﬁcally, the objective D(·) has been
+proved to be submodular under the LT model [61], which
+allows us to optimize D(·) itself rather than resorting to surro-
+gate bounds. This tightens the approximation guarantees, as
+the gap between the surrogates and the objective is no longer
+incurred. Moreover, our estimators can be adapted to the LT
+model by modifying the sampling procedure, as the diffusion
+process under LT also admits an equivalent live-edge char-
+acterization [24]. The optimization framework then applies
+directly, since it relies only on the statistical properties of the
+estimators.
+Fig. 3 Running time on all the datasets
+Fig. 4 Decreased spread on all the datasets
+5 Experiments
+In this section, we conduct extensive experiments to evaluate
+the performance of our proposed algorithms on both IMIN
+and BM problems. All the programs are implemented in C++
+and performed on a PC with an Intel Xeon 2.10GHz CPU and
+512GB memory. The source code is available at [1].
+5.1 Experimental setup
+Algorithms We evaluate the following algorithms on the
+IMIN problem. (1) AG and GR: the state-of-the-art algorithms
+proposed in [60]. (2) SandIMIN: the approximation algorithm
+for the IMIN problem proposed in this work. (3) SandIMIN-:
+a simpliﬁed version of SandIMIN in which the App-UB sub-
+routine is not executed for improved efﬁciency.
+For the BM problem, we evaluate the existing solution (1)
+Base [41], and our proposed three algorithms: (2) Heur-BM;
+(3) App-BM; (4) App-BM+.
+123
+
+
+===== PAGE 21 =====
+Efﬁcient and cost-effective inﬂuence...
+Page 21 of 26
+   53 
+Datasets We use 9 real-world datasets which are available
+on SNAP,1 i.e., EmailCore, Facebook, Wiki-Vote, EmailAll,
+DBLP, Twitter, Stanford, Youtube and Pokec. The details of
+the datasets are reported in Table 2 and we provide a short
+name for each dataset.
+Parameter settings Following the convention [22, 38, 43,
+46, 47], we set the propagation probability p(u, v) of each
+edge ⟨u, v⟩as the inverse of v’s in-degree in IC model. The
+seed nodes in S are randomly selected from the top 200 most
+inﬂuential nodes.
+IMIN problem. By default, we set ϵ = 0.2, β = γ = 0.1
+and δ = 1/n for SandIMIN and SandIMIN-. For AG and GR,
+we set the number of generated realizations to 10,000, which
+is recommended in [60]. |S| and k are 10 and 100 by default,
+respectively.
+BM problem. We set |S| = 10 and η = 0.2 ˆIG(S) by default,
+where ˆIG(S) is a (0.1, 1/n)-estimate of E[IG(S)]. We ﬁx
+the number of trees generated by Base to 1,000, following
+the setting in [41]. In addition, we set δ = 1/n for Heur-
+BM, App-BM and App-BM+, θh = 10, 000 and γ = 0.1
+for Heur-BM, and μ = 10−2 for App-BM. Notably, in the
+majority of datasets,
+E[IG(S)]−|S|−η
+E[IG(S)]−|S|+η+2|V ′s | can exceed 10−2.
+Consequently, App-BM often fails to provide any approxi-
+mation guarantees under the default settings, as indicated by
+Theorem 12.
+Moreover, we estimate the inﬂuence spread of the seed
+set S by taking the average of its spreads over 105 Monte-
+Carlo simulations. For each parameter setting, we repeat each
+algorithm 10 times and report the average value. For those
+experiments that cannot ﬁnish within 24h, we set them as
+INF.
+5.2 Performance evaluation of the IMIN solutions
+Efﬁciency evaluation In Fig.3, we ﬁrst evaluate the time
+cost on all the datasets with the default settings. As can
+be seen, SandIMIN and SandIMIN- cost less time than AG
+and GR on all the datasets and they can achieve up to two
+orders of magnitude speedup. In most cases, AG is more efﬁ-
+cient than GR. Besides, AG and GR cannot complete on large
+datasets (i.e., Youtube and Pokec) in a reasonable time. The
+primary reasons are that our methods transform the original
+non-submodular maximization problem into the submodular
+maximization scenario. This allows us to avoid generating
+new samples after selecting each blocker. Furthermore, our
+heuristic algorithm for IMIN incurs almost no computation
+overhead.
+In addition, SandIMIN- is more efﬁcient than
+SandIMIN on all the datasets, which is not surprising given
+that SandIMIN- does not execute App-UB. Moreover, as the
+dataset becomes large, the gap between the time cost of
+1 http://snap.stanford.edu.
+EC
+FB
+WV
+EA
+DB
+TT
+SF
+YT
+PK
+0.0
+10.0
+20.0
+30.0
+43.2
+53.2
+Empirical Approximation Ratio (%)
+= 0.2, γ = 0.1
+= 0.1, γ = 0.05
+Fig. 5 Approximation ratio of SandIMIN on all the datasets.
+our solutions and that of AG and GR becomes smaller. This
+is because, to provide theoretical guarantees for our solu-
+tions, the number of samples generated will increase as the
+dataset becomes large, while AG and GR use a ﬁxed number
+of realizations each round for graphs of any size and offer
+no approximation guarantee for the quality of the returned
+results.
+Effectiveness evaluation In Fig.4, we present the decreased
+spread on all the datasets with the default settings. The results
+indicate that our solutions always exhibit similar perfor-
+mance to AG and GR. Note that, on Youtube and Pokec, AG
+and GR cannot ﬁnish in a reasonable time. Therefore, the cor-
+responding value is not shown in the ﬁgure. We also evaluate
+the approximation guarantees of SandIMIN. As presented in
+Theorem 5, the exact approximation ratio of SandIMIN is
+intractable to compute, because Bo
+1 and Bo
+L are NP-hard to
+obtain. According to [56], (1−γ )2
+(1+γ )2 · (1 −1/e −ϵ) ·
+ˆDs(BU )
+ˆDUs (BU )
+is a computable lower bound of the approximation ratio for
+SandIMIN. Notably, no computable approximation ratio is
+provided for SandIMIN-, since it does not return BU. The
+average lower bound of the approximation ratio of SandIMIN
+on all the datasets (averaged over k = 10, 50 and 100) is
+shown in Fig.5. We report the results under two different
+settings of ϵ and γ . In particular, on all the datasets, the
+approximation ratio exceeds 20% with ϵ = 0.2, γ = 0.1,
+and exceeds 30% with ϵ = 0.1, γ = 0.05. As a data-
+dependent approximation guaranteed algorithm, SandIMIN
+performs well in terms of approximation, as the ratios closely
+approximate the value of 1 −1/e −ϵ.
+5.3 Performance evaluation of the BM solutions
+Efﬁciency evaluation Figs.6 and 7 report the running time
+of the BM approaches on all datasets when varying |S| and
+η/ ˆIG(S). We observe that Base achieves the highest efﬁ-
+ciency, as it requires generating only a small number of
+samples. In contrast, Heur-BM must regenerate a certain
+portion of samples containing the selected blocks at each
+iteration; App-BM and App-BM+ demand a substantially
+larger number of samples to ensure the theoretical guaran-
+tees. In addition, App-BM always runs much slower than
+both Heur-BM and App-BM+, and is able to complete within
+a single day only on the relatively small datasets. This obser-
+123
+
+
+===== PAGE 22 =====
+   53 
+Page 22 of 26
+J. Wang et al.
+Base
+Heur-BM
+App-BM+
+App-BM
+10
+20
+30
+40
+50
+10−2
+10−1
+100
+101
+102
+103
+104
+Runnin g Time (sec)
+(a) EC
+10
+20
+30
+40
+50
+100
+101
+102
+103
+104
+105
+Runnin g Time (sec)
+(b) FB
+10
+20
+30
+40
+50
+10−1
+100
+101
+102
+103
+104
+105
+Runnin g Time (sec)
+(c) WV
+10
+20
+30
+40
+50
+101
+102
+103
+104
+INF
+Runnin g Time (sec)
+(d) EA
+10
+20
+30
+40
+50
+101
+102
+103
+104
+INF
+Runnin g Time (sec)
+(e) DB
+10
+20
+30
+40
+50
+100
+101
+102
+103
+104
+INF
+Runnin g Time (sec)
+(f) TT
+10
+20
+30
+40
+50
+100
+101
+102
+103
+104
+INF
+Runnin g Time (sec)
+(g) SF
+10
+20
+30
+40
+50
+101
+102
+103
+104
+INF
+Runnin g Time (sec)
+(h) YT
+10
+20
+30
+40
+50
+101
+102
+103
+104
+INF
+Runnin g Time (sec)
+(i) PK
+Fig. 6 Running time when varying |S|
+Base
+Heur-BM
+App-BM+
+App-BM
+0.12
+0.14
+0.16
+0.18
+0.2
+10−2
+10−1
+100
+101
+102
+103
+104
+Runnin g Time (sec)
+(a) EC
+0.12
+0.14
+0.16
+0.18
+0.2
+100
+101
+102
+103
+104
+105
+Runnin g Time (sec)
+(b) FB
+0.12
+0.14
+0.16
+0.18
+0.2
+10−1
+100
+101
+102
+103
+104
+Runnin g Time (sec)
+(c) WV
+0.12
+0.14
+0.16
+0.18
+0.2
+100
+101
+102
+103
+104
+INF
+Runnin g Time (sec)
+(d) EA
+0.12
+0.14
+0.16
+0.18
+0.20
+100
+101
+102
+103
+104
+INF
+Runnin g Time (sec)
+(e) DB
+0.12
+0.14
+0.16
+0.18
+0.20
+100
+101
+102
+103
+104
+INF
+Runnin g Time (sec)
+(f) TT
+0.12
+0.14
+0.16
+0.18
+0.20
+100
+101
+102
+103
+104
+INF
+Runnin g Time (sec)
+(g) SF
+0.12
+0.14
+0.16
+0.18
+0.20
+101
+102
+103
+104
+INF
+Runnin g Time (sec)
+(h) YT
+0.12
+0.14
+0.16
+0.18
+0.20
+101
+102
+103
+104
+INF
+Runnin g Time (sec)
+(i) PK
+Fig. 7 Running time when varying η/ ˆIG(S)
+vation indicates that, although App-BM achieves a (slightly)
+tighter approximation ratio than App-BM+, its contribution
+is predominantly theoretical, while App-BM+ emerges as
+the more suitable option for practical deployment. More-
+over, in most cases App-BM+ runs faster than Heur-BM,
+demonstrating the superiority of our trial-and-error sampling
+scheme. Only on the three large graphs (DBLP, Youtube,
+and Pokec) does Heur-BM outperform App-BM+. This is
+because Heur-BM adopts a ﬁxed sampling size regardless
+of the dataset, whereas the stopping conditions of App-BM+
+generally become harder to satisfy as the graph scales. As
+for the effect of the two parameters, it can be observed
+that the runtime of Heur-BM increases with larger values
+of |S| or η/ ˆIG(S). This is because an increase in these
+quantities results in a larger value of η, which necessitates
+selecting more blockers to satisfy the threshold condition.
+Each blocker selection further entails Heur-BM to regenerate
+Base
+Heur-BM
+App-BM+
+App-BM
+10
+20
+30
+40
+50
+100
+101
+102
+The Num ber of Blockers
+(a) EC
+10
+20
+30
+40
+50
+101
+102
+103
+The Num ber of Blockers
+(b) FB
+10
+20
+30
+40
+50
+101
+102
+103
+The Num ber of Blockers
+(c) WV
+10
+20
+30
+40
+50
+101
+102
+103
+The Num ber of Blockers
+(d) EA
+10
+20
+30
+40
+50
+101
+102
+103
+The Num ber of Blockers
+(e) DB
+10
+20
+30
+40
+50
+100
+101
+102
+The Num ber of Blockers
+(f) TT
+10
+20
+30
+40
+50
+100
+101
+102
+The Num ber of Blockers
+(g) SF
+10
+20
+30
+40
+50
+101
+102
+103
+The Num ber of Blockers
+(h) YT
+10
+20
+30
+40
+50
+100
+101
+102
+103
+The Num ber of Blockers
+(i) PK
+Fig. 8 The number of blockers when varying |S|
+Base
+Heur-BM
+App-BM+
+App-BM
+0.12
+0.14
+0.16
+0.18
+0.2
+100
+101
+102
+The Num ber of Blockers
+(a) EC
+0.12
+0.14
+0.16
+0.18
+0.2
+101
+102
+103
+The Num ber of Blockers
+(b) FB
+0.12
+0.14
+0.16
+0.18
+0.2
+100
+101
+102
+The Num ber of Blockers
+(c) WV
+0.12
+0.14
+0.16
+0.18
+0.2
+101
+102
+103
+The Num ber of Blockers
+(d) EA
+0.12
+0.14
+0.16
+0.18
+0.20
+100
+101
+102
+103
+The Num ber of Blockers
+(e) DB
+0.12
+0.14
+0.16
+0.18
+0.20
+100
+101
+102
+The Num ber of Blockers
+(f) TT
+0.12
+0.14
+0.16
+0.18
+0.20
+100
+101
+The Num ber of Blockers
+(g) SF
+0.12
+0.14
+0.16
+0.18
+0.20
+100
+101
+102
+103
+The Num ber of Blockers
+(h) YT
+0.12
+0.14
+0.16
+0.18
+0.20
+100
+101
+102
+The Num ber of Blockers
+(i) PK
+Fig. 9 The number of blockers when varying η/ ˆIG(S)
+multiple sample sets, thereby increasing the overall com-
+putational overhead. In contrast, App-BM+ shows relatively
+stable performance under varying values of |S| and η/ ˆIG(S),
+which highlights its robustness.
+Effectiveness evaluation We then evaluate the effectiveness
+of our BM algorithms using two metrics: the cardinality of
+the returned blocker set and the threshold satisfactory ratio,
+deﬁned as the ratio between the reduction in inﬂuence spread
+and the given threshold. A threshold satisfactory ratio above
+1 indicates that the threshold condition is met. Figs.8, 9, 10,
+11 report the number of selected blockers and the thresh-
+old satisfaction ratio on all datasets when varying |S| and
+η/ ˆIG(S). It can be observed that, in almost all cases, the
+threshold satisfactory ratio achieved by Base is below 1; in
+EmailCore, the ratio even falls below 0.8. This inferior per-
+formance can be attributed to the use of a biased estimator
+in Base, which makes its stopping condition for selection
+123
+
+
+===== PAGE 23 =====
+Efﬁcient and cost-effective inﬂuence...
+Page 23 of 26
+   53 
+Base
+Heur-BM
+App-BM+
+App-BM
+10
+20
+30
+40
+50
+0.5
+0.7
+0.9
+1.1
+1.3
+1.5
+Threshol d Satisfactio n Ratio
+(a) EC
+10
+20
+30
+40
+50
+0.5
+0.6
+0.7
+0.8
+0.9
+1.0
+1.1
+1.2
+1.3
+1.4
+Threshol d Satisfactio n Ratio
+(b) FB
+10
+20
+30
+40
+50
+0.8
+0.9
+1.0
+1.1
+1.2
+1.3
+1.4
+1.5
+1.6
+Threshol d Satisfactio n Ratio
+(c) WV
+10
+20
+30
+40
+50
+0.9
+1.0
+1.1
+1.2
+1.3
+1.4
+1.5
+1.6
+Threshol d Satisfactio n Ratio
+(d) EA
+50
+0.8
+0.9
+1.0
+1.1
+1.2
+1.3
+1.4
+Threshol d Satisfactio n Ratio
+(e) DB
+10
+20
+30
+40
+50
+0.9
+1.0
+1.1
+1.2
+1.3
+1.4
+1.5
+1.6
+Threshol d Satisfactio n Ratio
+(f) TT
+10
+20
+30
+40
+50
+0.9
+1.0
+1.1
+1.2
+1.3
+1.4
+1.5
+1.6
+1.7
+1.8
+Threshol d Satisfactio n Ratio
+(g) SF
+10
+20
+30
+40
+50
+0.8
+0.9
+1.0
+1.1
+1.2
+1.3
+1.4
+1.5
+Threshol d Satisfactio n Ratio
+(h) YT
+10
+20
+30
+40
+50
+0.7
+0.8
+0.9
+1.0
+1.1
+1.2
+1.3
+1.4
+1.5
+1.6
+1.7
+Threshol d Satisfactio n Ratio
+(i) PK
+Fig. 10 Threshold satisfaction ratio when varying |S|
+Base
+Heur-BM
+App-BM+
+App-BM
+0.12
+0.14
+0.16
+0.18
+0.2
+0.6
+0.8
+1.0
+1.2
+1.4
+1.6
+Threshol d Satisfactio n Ratio
+(a) EC
+0.12
+0.14
+0.16
+0.18
+0.2
+0.5
+0.7
+0.9
+1.1
+1.3
+1.5
+1.7
+Threshol d Satisfactio n Ratio
+(b) FB
+0.12
+0.14
+0.16
+0.18
+0.2
+0.9
+1.1
+1.3
+1.5
+1.7
+1.9
+2.1
+Threshol d Satisfactio n Ratio
+(c) WV
+0.12
+0.14
+0.16
+0.18
+0.2
+0.8
+1.0
+1.2
+1.4
+1.6
+1.8
+Threshol d Satisfactio n Ratio
+(d) EA
+0.12
+0.14
+0.16
+0.18
+0.20
+0.8
+0.9
+1.0
+1.1
+1.2
+1.3
+1.4
+1.5
+1.6
+1.7
+Threshol d Satisfactio n Ratio
+(e) DB
+0.12
+0.14
+0.16
+0.18
+0.20
+0.9
+1.0
+1.1
+1.2
+1.3
+1.4
+1.5
+1.6
+1.7
+Threshol d Satisfactio n Ratio
+(f) TT
+0.12
+0.14
+0.16
+0.18
+0.20
+1.3
+1.5
+1.7
+1.9
+2.1
+2.3
+2.5
+Threshol d Satisfactio n Ratio
+(g) SF
+0.12
+0.14
+0.16
+0.18
+0.20
+0.8
+0.9
+1.0
+1.1
+1.2
+1.3
+1.4
+1.5
+Threshol d Satisfactio n Ratio
+(h) YT
+0.12
+0.14
+0.16
+0.18
+0.20
+0.8
+1.0
+1.2
+1.4
+1.6
+1.8
+2.0
+2.2
+Threshol d Satisfactio n Ratio
+(i) PK
+Fig. 11 Threshold satisfaction ratio when varying η/ ˆIG(S)
+inaccurate. In particular, the estimator deviates considerably
+from the true objective value, causing the algorithm to termi-
+nate blocker selection well before the threshold condition
+is actually satisﬁed. This also explains why Base consis-
+tently returns a blocker set with the smallest cardinality.
+In addition, we ﬁnd that Heur-BM often yields a threshold
+satisfactory ratio substantially greater than 1. One possible
+explanation is that, to theoretically guarantee the satisfaction
+of the threshold condition, the stopping criterion of Heur-
+BM in blocker selection tends to be overly conservative. The
+threshold satisfactory ratio offered by App-BM+ falls below
+1 in a few datasets, indicating that App-BM+ may violate the
+threshold condition in certain scenarios. This outcome is not
+unexpected, as App-BM+ provides bicriteria approximation
+guarantees, which permit minor violations of the thresh-
+old condition. Furthermore, App-BM+ consistently requires
+fewer blockers than Heur-BM, owing to its O(ln n) cardi-
+nality approximation guarantee. Notably, although Heur-BM
+provably admits no constant-factor bound on its cardinal-
+ity (Lemma 11), in practice it does not fail drastically: over
+all datasets and settings, it returns less than one order of
+magnitude more blockers than App-BM+. To explain, the
+unbounded worst case in Lemma 11 arises only when a few
+nodes jointly protect a large region while each contributes a
+negligible marginal gain, so that the greedy overlooks them;
+such conﬁgurations are quite rare in practice.
+Remark Theoretically, App-BM+ is favored over Heur-BM
+for its strong approximation guarantee, which certiﬁes its
+solution quality in advance. Empirically, our experimental
+results show that on the small and medium datasets, App-
+BM+ generallydominates Heur-BM, returningfewer blockers
+while being faster than Heur-BM. On some large datasets,
+however, a trade-off emerges: App-BM+ still returns fewer
+blockers, but Heur-BM can run faster. In such cases, App-
+BM+ is preferable when a small blocking set is desired,
+whereas Heur-BM may be more suitable when runtime is
+the dominant concern.
+6 Related work
+The inﬂuence maximization (IM) problem, which aims to
+ﬁnd a set of users with the largest inﬂuence spread, is a fun-
+damental problem in graph analysis. Kempe et al. [24] ﬁrst
+formulate IM problem and propose independent cascade (IC)
+as well as linear threshold (LT) models. In addition, they uti-
+lize a greedy algorithm that returns (1−1/e−ϵ)-approximate
+solution. Afterwards, a large number of work [7–11, 17, 23,
+39, 44, 45, 55] focuses on the development of heuristic algo-
+rithms to reduce the computation overhead. However, such
+solutions return the results without any approximation guar-
+antees. As a milestone, Borgs et al. [5] propose the reverse
+inﬂuence sampling (RIS) technique for inﬂuence spread esti-
+mation. Subsequently, many RIS-based algorithms [18, 22,
+38, 43, 46, 47] that ensure (1 −1/e −ϵ)-approximations
+with reduced computation overhead are proposed. To bet-
+ter capture real-world scenarios, numerous variants of IM
+have also been extensively investigated. For instance, [26,
+31] incorporate temporal aspects, while [30, 53, 54] inte-
+grate location information into the IM setting. Wang et al.
+[50] study the IM problem with priority constraints. More-
+over, the seed minimization (SM) problem, a classical dual
+of IM, has been widely studied in the literature [14, 16, 20,
+21, 28, 32, 42, 62, 64]. The goal of SM is to identify a seed
+set of minimum cardinality that ensures at least η nodes are
+inﬂuenced in expectation, where η is a predeﬁned threshold.
+As the counterpart of IM, the inﬂuence minimization
+(IMIN) problem has also attracted great attention due to its
+wide applications (e.g., misinformation suppression) [3, 36].
+Wang et al. [52] ﬁrst formulate and study IMIN under the IC
+123
+
+
+===== PAGE 24 =====
+   53 
+Page 24 of 26
+J. Wang et al.
+model, proposing a greedy method based on Monte-Carlo
+simulations. More recently, Xie et al. [60] design a novel
+dominator tree–based approach to efﬁciently estimate the
+reduction in inﬂuence spread, on top of which two greedy
+methods are developed. However, we note that all exist-
+ing IMIN solutions mentioned above are heuristic without
+any approximation guarantees. This paper ﬁlls this gap by
+proposing SandIMIN, an efﬁcient and theoretically grounded
+algorithm for IMIN. Beyond the node-blocking strategy, sev-
+eral studies haveexploredalternativeapproaches tominimize
+the inﬂuence spread of a given seed set. Budak et al. [6] ﬁrst
+propose to spread positive information to counterbalance the
+misinformation propagation. Under this strategy, the objec-
+tive is shown to be monotonic and submodular. Leveraging
+these properties, Tong et al. [48, 49] later design the sam-
+pling based methods and present the algorithms that provide
+(1 −1/e −ϵ)-approximations. In [27] and [25], the edge-
+blocking strategy is investigated under the LT and IC model,
+respectively.
+Furthermore, as a natural variant of IMIN, the BM prob-
+lem has been formulated and investigated in the literature. In
+[40] and [41], Pham et al. study the BM problem under the
+LT and IC model, respectively. In both works, the authors
+propose scalable greedy algorithms equipped with tree-
+basedestimationmethods.However,theirproposedsolutions
+neither guarantee theoretical satisfaction of the threshold
+condition nor ensure that the cardinality (of the selected
+blocker set) is close to the optimal value. In this work, we
+alleviate these limitations by developing practical algorithms
+for BM with non-trivial approximation guarantees.
+7 Conclusion
+In this paper, we study the inﬂuence minimization and
+blocker minimization problems under the IC model. For the
+former, we propose the ﬁrst approximation algorithm with
+superior efﬁciency and strong performance guarantees; for
+the latter, we design a scalable heuristic and two bicrite-
+ria approximation algorithms. Extensive experiments over 9
+real-world datasets are conducted to verify the performance
+of our algorithms. A promising direction for future work is
+to study both problems under other diffusion models, such
+as time-aware models.
+Funding Open Access funding enabled and organized by CAUL and
+its Member Institutions.
+Open Access This article is licensed under a Creative Commons
+Attribution 4.0 International License, which permits use, sharing, adap-
+tation, distribution and reproduction in any medium or format, as
+long as you give appropriate credit to the original author(s) and the
+source, provide a link to the Creative Commons licence, and indi-
+cate if changes were made. The images or other third party material
+in this article are included in the article’s Creative Commons licence,
+unless indicated otherwise in a credit line to the material. If material
+is not included in the article’s Creative Commons licence and your
+intended use is not permitted by statutory regulation or exceeds the
+permitteduse,youwillneedtoobtainpermissiondirectlyfromthecopy-
+right holder. To view a copy of this licence, visit http://creativecomm
+ons.org/licenses/by/4.0/.
+References
+1. Appendix and code. https://github.com/jhwang0116/IMIN_BM
+(2026)
+2. Aho, A.V., Ullman, J.D.: The theory of parsing, translation, and
+compiling. 1: Parsing, Prentice-Hall (1972)
+3. Allcott, H., Gentzkow, M.: Social media and fake news in the 2016
+election. Journal of economic perspectives, (2017)
+4. Bian, A.A., Buhmann, J.M., Krause, A., Tschiatschek, S.: Guaran-
+tees for greedy maximization of non-submodular functions with
+applications. ICML Proceed. Mach. Learn. Res. 70, 498–507
+(2017)
+5. Borgs,C.,Brautbar,M.,Chayes,J.T.,Lucier,B.:Maximizingsocial
+inﬂuence in nearly optimal time. In: SODA, pp. 946–957., SIAM
+(2014)
+6. Budak, C., Agrawal, D., Abbadi, A.E.: Limiting the spread of mis-
+information in social networks. In: WWW, pp. 665–674. ACM
+(2011)
+7. Chen, W., Wang, C., Wang, Y.: Scalable inﬂuence maximization for
+prevalent viral marketing in large-scale social networks. In: KDD,
+pp. 1029–1038. ACM (2010)
+8. Chen, W., Wang, Y., Yang, S.: Efﬁcient inﬂuence maximization in
+social networks. In: KDD, pp. 199–208. ACM (2009)
+9. Chen, W., Yuan, Y., Zhang, L.: Scalable inﬂuence maximization in
+social networks under the linear threshold model. In: ICDM, pp.
+88–97. IEEE Computer Society (2010)
+10. Cheng, S., Shen, H., Huang, J., Chen, W., Cheng, X.: Imrank: inﬂu-
+ence maximization via ﬁnding self-consistent ranking. In: SIGIR,
+pp. 475–484. ACM (2014)
+11. Cheng, S., Shen, H., Huang, J., Zhang, G., Cheng, X.: Staticgreedy:
+solving the scalability-accuracy dilemma in inﬂuence maximiza-
+tion. In: CIKM, pp. 509–518. ACM (2013)
+12. Domingos, P., Richardson, M.: Mining the network value of cus-
+tomers.In:ProceedingsoftheseventhACMSIGKDDinternational
+conference on Knowledge discovery and data mining, pp. 57–66.
+(2001)
+13. Feige, U.: A threshold of ln n for approximating set cover. J. ACM
+45(4), 634–652 (1998)
+14. Feng, C., Chen, X., Guo, Q., Zhang, F., Wang, S.: Efﬁcient
+approximation algorithms for minimum cost seed selection with
+probabilistic coverage guarantee. Proc. ACM Manag. Data 2(4),
+197:1-197:26 (2024)
+15. Gladwell, M.: The tipping point: How little things can make a big
+difference. Little, Brown (2006)
+16. Goyal, A., Bonchi, F., Lakshmanan, L.V.S., Venkatasubramanian,
+S.: On minimizing budget and time in inﬂuence propagation over
+social networks. Soc. Netw. Anal. Min. 3(2), 179–192 (2013)
+17. Goyal, A., Lu, W., Lakshmanan, L.V.S.: SIMPATH: an efﬁcient
+algorithm for inﬂuence maximization under the linear threshold
+model. In: ICDM, pp. 211–220. IEEE Computer Society (2011)
+18. Guo, Q., Wang, S., Wei, Z., Lin, W., Tang, J.: Inﬂuence maxi-
+mization revisited: efﬁcient sampling with bound tightened. ACM
+Transactions on Database Systems (TODS) 47(3), 1–45 (2022)
+19. Han, K., He, Y., Huang, K., Xiao, X., Tang, S., Xu, J., Huang,
+L.: Best bang for the buck: Cost-effective seed selection for online
+social networks. IEEE Trans. Knowl. Data Eng. 32(12), 2297–2309
+(2019)
+123
+
+
+===== PAGE 25 =====
+Efﬁcient and cost-effective inﬂuence...
+Page 25 of 26
+   53 
+20. Han, K., He, Y., Huang, K., Xiao, X., Tang, S., Xu, J., Huang,
+L.: Best bang for the buck: Cost-effective seed selection for online
+social networks. IEEE Trans. Knowl. Data Eng. 32(12), 2297–2309
+(2020)
+21. Hong, W., Qian, C., Tang, K.: Efﬁcient minimum cost seed
+selection with theoretical guarantees for competitive inﬂuence
+maximization. IEEE Trans. Cybern. 51(12), 6091–6104 (2021)
+22. Huang, K., Wang, S., Bevilacqua, G.S., Xiao, X., Lakshmanan,
+L.V.S.: Revisiting the stop-and-stare algorithms for inﬂuence max-
+imization. Proc. VLDB Endow. 10(9), 913–924 (2017)
+23. Jung, K., Heo, W., Chen, W.: IRIE: scalable and robust inﬂuence
+maximization in social networks. In: ICDM, pp. 918–923. IEEE
+Computer Society (2012)
+24. Kempe, D., Kleinberg, J.M., Tardos, É.: Maximizing the spread of
+inﬂuence through a social network. In: KDD, pp. 137–146. ACM
+(2003)
+25. Khalil, E.B., Dilkina, B., Song, L.: Scalable diffusion-aware opti-
+mization of network topology. In: KDD, pp. 1226–1235. ACM
+(2014)
+26. Khan, A.: Towards time-discounted inﬂuence maximization. In:
+CIKM, pp. 1873–1876. ACM (2016)
+27. Kimura, M., Saito, K., Motoda, H.: Solving the contamination
+minimization problem on networks for the linear threshold model.
+PRICAI Lecture Notes Comput. Sci. 5351, 977–984 (2008)
+28. Kuhnle, A., Pan, T., Alim, M.A., Thai, M.T.: Scalable bicriteria
+algorithms for the threshold activation problem in online social
+networks. In: INFOCOM, pp. 1–9. IEEE (2017)
+29. Lengauer, T., Tarjan, R.E.: A fast algorithm for ﬁnding dominators
+in a ﬂowgraph. ACM Trans. Program. Lang. Syst. 1(1), 121–141
+(1979)
+30. Li, G., Chen, S., Feng, J., Tan, K., Li, W.: Efﬁcient location-aware
+inﬂuence maximization. In: SIGMOD Conference, pp. 87–98.
+ACM (2014)
+31. Liu, B., Cong, G., Xu, D., Zeng, Y.: Time constrained inﬂuence
+maximization in social networks. In: ICDM, pp. 439–448. IEEE
+Computer Society (2012)
+32. Long, C., Wong, R.C.: Minimizing seed set for viral marketing. In:
+ICDM, pp. 427–436. IEEE Computer Society (2011)
+33. Lowry, E.S., Medlock, C.W.: Object code optimization. Commun.
+ACM 12(1), 13–22 (1969)
+34. Lu, W., Chen, W., Lakshmanan, L.V.S.: From competition to com-
+plementarity: Comparative inﬂuence diffusion and maximization.
+Proc. VLDB Endow. 9(2), 60–71 (2015)
+35. Mandl, C.E., Mandl, C.E., Fess: Managing complexity in social
+systems. Springer (2019)
+36. Morozov, E.: Swine ﬂu: Twitter’s power to misinform. Foreign
+policy (2009)
+37. Nemhauser, G.L., Wolsey, L.A., Fisher, M.L.: An analysis of
+approximations for maximizing submodular set functions - I. Math.
+Program. 14(1), 265–294 (1978)
+38. Nguyen, H.T., Thai, M.T., Dinh, T.N.: Stop-and-stare: Optimal
+sampling algorithms for viral marketing in billion-scale networks.
+In: SIGMOD Conference, pp. 695–710. ACM (2016)
+39. Ohsaka, N., Akiba, T., Yoshida, Y., Kawarabayashi, K.: Fast and
+accurate inﬂuence maximization on large networks with pruned
+monte-carlo simulations. In: AAAI, pp. 138–144. AAAI Press
+(2014)
+40. Pham, C.V., Phu, Q.V., Hoang, H.X.: Targeted misinformation
+blocking on online social networks. In: ACIIDS (1), Lecture Notes
+in Computer Science, vol. 10751, pp. 107–116. Springer (2018)
+41. Pham, C.V., Phu, Q.V., Hoang, H.X., Pei, J., Thai, M.T.: Minimum
+budget for misinformation blocking in online social networks. J.
+Comb. Optim. 38(4), 1101–1127 (2019)
+42. Tang, J., Huang, K., Xiao, X., Lakshmanan, L.V.S., Tang, X., Sun,
+A., Lim, A.: Efﬁcient approximation algorithms for adaptive seed
+minimization. In: SIGMOD Conference, pp. 1096–1113. ACM
+(2019)
+43. Tang, J., Tang, X., Xiao, X., Yuan, J.: Online processing algorithms
+for inﬂuence maximization. In: SIGMOD Conference, pp. 991–
+1005. ACM (2018)
+44. Tang, J., Tang, X., Yuan, J.: Inﬂuence maximization meets efﬁ-
+ciency and effectiveness: A hop-based approach. In: ASONAM,
+pp. 64–71. ACM (2017)
+45. Tang, J., Tang, X., Yuan, J.: An efﬁcient and effective hop-based
+approachforinﬂuencemaximizationinsocialnetworks.Soc.Netw.
+Anal. Min. 8, 1–19 (2018)
+46. Tang, Y., Shi, Y., Xiao, X.: Inﬂuence maximization in near-linear
+time: A martingale approach. In: SIGMOD Conference, pp. 1539–
+1554. ACM (2015)
+47. Tang, Y., Xiao, X., Shi, Y.: Inﬂuence maximization: near-optimal
+time complexity meets practical efﬁciency. In: SIGMOD Confer-
+ence, pp. 75–86. ACM (2014)
+48. Tong, G.A., Du, D.: Beyond uniform reverse sampling: A hybrid
+sampling technique for misinformation prevention. In: INFOCOM,
+pp. 1711–1719. IEEE (2019)
+49. Tong, G.A., Wu, W., Guo, L., Li, D., Liu, C., Liu, B., Du, D.: An
+efﬁcient randomized algorithm for rumor blocking in online social
+networks. In: INFOCOM, pp. 1–9. IEEE (2017)
+50. Wang, J., Wu, Y., Wang, X., Chen, C., Zhang, Y., Qin, L.: Effective
+inﬂuence maximization with priority. In: WWW, pp. 4673–4683.
+ACM (2025)
+51. Wang, J., Wu, Y., Wang, X., Zhang, Y., Qin, L., Zhang, W., Lin, X.:
+Efﬁcient inﬂuence minimization via node blocking. Proc. VLDB
+Endow. 17(10), 2501–2513 (2024)
+52. Wang, S., Zhao, X., Chen, Y., Li, Z., Zhang, K., Xia, J.: Negative
+inﬂuence minimizing by blocking nodes in social networks. In:
+AAAI(Late-BreakingDevelopments),AAAITechnicalReport,vol.
+WS-13-17. AAAI (2013)
+53. Wang, X., Zhang, Y., Zhang, W., Lin, X.: Distance-aware inﬂuence
+maximization in geo-social network. In: ICDE, pp. 1–12. IEEE
+Computer Society (2016)
+54. Wang, X., Zhang, Y., Zhang, W., Lin, X.: Efﬁcient distance-
+aware inﬂuence maximization in geo-social networks. IEEE Trans.
+Knowl. Data Eng. 29(3), 599–612 (2017)
+55. Wang, X., Zhang, Y., Zhang, W., Lin, X., Chen, C.: Bring order into
+the samples: A novel scalable method for inﬂuence maximization.
+IEEE Trans. Knowl. Data Eng. 29(2), 243–256 (2017)
+56. Wang, Z., Yang, Y., Pei, J., Chu, L., Chen, E.: Activity maximiza-
+tion by effective information diffusion in social networks. IEEE
+Trans. Knowl. Data Eng. 29(11), 2374–2387 (2017)
+57. Wolsey, L.A.: An analysis of the greedy algorithm for the submod-
+ular set covering problem. Combinatorica 2(4), 385–393 (1982)
+58. Wu, Y., Wang, J., Sun, R., Chen, C., Wang, X., Zhang, Y.: Targeted
+ﬁlter bubbles mitigating via edges insertion. In: Companion Pro-
+ceedings of the ACM Web Conference 2024, pp. 734–737 (2024)
+59. Xiang, F., Wang, J., Wu, Y., Wang, X., Chen, C., Zhang, Y.: Rumor
+blocking with pertinence set in large graphs. World Wide Web
+27(1), 6 (2024)
+60. Xie, J., Zhang, F., Wang, K., Lin, X., Zhang, W.: Minimizing the
+inﬂuence of misinformation via vertex blocking. In: ICDE, pp.
+789–801. IEEE (2023)
+61. Xie, J., Zhang, F., Wang, K., Liu, J., Lin, X., Zhang, W.: Inﬂuence
+minimization via blocking strategies. INFORMS J. Comput. 37(6),
+1587–1604 (2025)
+62. Zhang, P., Chen, W., Sun, X., Wang, Y., Zhang, J.: Minimizing
+seed set selection with probabilistic coverage guarantee in a social
+network. In: KDD, pp. 1306–1315. ACM (2014)
+123
+
+
+===== PAGE 26 =====
+   53 
+Page 26 of 26
+J. Wang et al.
+63. Zhu, Y., Li, D., Zhang, Z.: Minimum cost seed set for competitive
+social inﬂuence. In: IEEE INFOCOM 2016-The 35th Annual IEEE
+International Conference on Computer Communications, pp. 1–9.
+IEEE (2016)
+64. Zhu, Y., Li, D., Zhang, Z.: Minimum cost seed set for competitive
+social inﬂuence. In: INFOCOM, pp. 1–9. IEEE (2016)
+65. Zhu, Y., Tang, J., Tang, X., Wang, S., Lim, A.: 2-hop+ sampling:
+Efﬁcient and effective inﬂuence estimation. IEEE Trans. Knowl.
+Data Eng. 35(2), 1088–1103 (2023)
+Publisher’s Note Springer Nature remains neutral with regard to juris-
+dictional claims in published maps and institutional afﬁliations.
+123
