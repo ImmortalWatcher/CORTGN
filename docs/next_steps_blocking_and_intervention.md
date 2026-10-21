@@ -1,5 +1,7 @@
 # 下一步规划：把阻断做准，并接上内容干预
 
+2026-10-21 起，人员分工和实现顺序以 `docs/AGENT_HANDOFF_2026-10-21.md` 为准。本文件第 2.2 节「先 MLP、超过出度再接 GRU」不再执行：主模型是 TGN 记忆加 REINFORCE，无记忆的 REINFORCE 和排序损失是对照。内容侧的 LLM 小样本不在本月分工里。下面的协议、成功线和泄漏规则仍然有效。
+
 日期：2026-10-19。依据导师要求、`docs/tgn_blocking_report.md` 的实验结果，以及两篇笔记：
 
 - `docs/paper_notes/VLDBJ2026_influence_blocker_minimization.md`

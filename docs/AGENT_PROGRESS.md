@@ -1,6 +1,6 @@
 # Agent 进度入口
 
-最后更新：2026-10-19。下一个 agent 先读本文件，再按第 4 节打开对应笔记。不要从聊天记录重建结论。
+最后更新：2026-10-21。下一个 agent 先读 [docs/AGENT_HANDOFF_2026-10-21.md](AGENT_HANDOFF_2026-10-21.md)，再读本文件第 2–4 节。不要从聊天记录重建结论。交接文档覆盖下面第 5 节的旧动作，也覆盖 `docs/next_steps_blocking_and_intervention.md` 第 2.2 节「先 MLP 再接 GRU」的顺序。
 
 ## 1. 项目是什么
 
@@ -47,10 +47,10 @@
 
 ## 5. 下一个 agent 的默认动作
 
-按 `docs/next_steps_blocking_and_intervention.md` 第 5 节：
+以 `docs/AGENT_HANDOFF_2026-10-21.md` 第 3 节为准，不要写论文或 PPT：
 
-1. 实现 `scripts/blocking_bm.py`（1h/6h，\(\eta=0.10/0.15/0.20\)）。
-2. 实现 `scripts/rl_blocking.py`（REINFORCE，对照出度、排序回归、oracle）。
-3. 内容侧先跑 `scripts/debunk_harm_threshold.py`，再决定是否对 60 条根帖调用 LLM。
+1. 戊先做共用评价函数，并实现 `scripts/blocking_bm.py`（1h/6h，\(\eta=0.10/0.15/0.20\)）。
+2. 甲：TGN 记忆 + REINFORCE 序贯阻断。乙：同一套 REINFORCE，只有手算特征。丙：TGN 记忆 + 排序损失，窗口结束一次性 top-5，不续训旧权重。
+3. 丁等甲的配置接口，再跑三组消融和 6h 迁移。
 
-未收到导师要求前，不要做用户级大图上的 SandIMIN 复现。
+未收到导师要求前，不要做用户级大图上的 SandIMIN 复现，不要跑 ED2D 的 LLM 辩论。

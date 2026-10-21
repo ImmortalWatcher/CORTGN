@@ -30,4 +30,4 @@ Counterfactual Opinion Reasoning with Temporal Graph Networks
 - [docs/AGENT_PROGRESS.md](docs/AGENT_PROGRESS.md)
 - [docs/next_steps_blocking_and_intervention.md](docs/next_steps_blocking_and_intervention.md)
 
-执行顺序是：先补「达到给定削减比例所需的最少阻断人数」，再用强化学习做观察窗口内的序贯选点，内容辟谣受检测置信度约束后再做小样本。不要给 MiniTGN 加 epoch。多模态与级联对齐继续暂缓。
+2026-10-21 的执行顺序以 [docs/AGENT_HANDOFF_2026-10-21.md](docs/AGENT_HANDOFF_2026-10-21.md) 为准：共用评价和最少阻断人数表，加上三条同时开工的训练（TGN 记忆加强化学习、无记忆的强化学习、TGN 排序损失）。不要给 MiniTGN 加 epoch，不要先写论文或 PPT。多模态与级联对齐继续暂缓。
