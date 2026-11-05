@@ -1,0 +1,35 @@
+{
+  "checkpoint": "D:\\deep-learning\\DAMMFND\\scripts\\tgn_rl_fillk.pt",
+  "k": 5,
+  "window": "time:1h",
+  "val_rumor": {
+    "n": 305,
+    "mean_selected": 4.622950819672131,
+    "mean_block_rate": 0.10959469863831461,
+    "frac_full_budget": 0.8655737704918033,
+    "frac_none": 0.0,
+    "hist": {
+      "0": 0,
+      "1": 17,
+      "2": 6,
+      "3": 11,
+      "4": 7,
+      "5": 264
+    }
+  },
+  "test_rumor": {
+    "n": 311,
+    "mean_selected": 4.565916398713826,
+    "mean_block_rate": 0.11504156275574465,
+    "frac_full_budget": 0.8456591639871383,
+    "frac_none": 0.0,
+    "hist": {
+      "0": 0,
+      "1": 18,
+      "2": 9,
+      "3": 15,
+      "4": 6,
+      "5": 263
+    }
+  }
+}

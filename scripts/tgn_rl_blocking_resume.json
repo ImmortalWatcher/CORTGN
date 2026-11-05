@@ -1,0 +1,18 @@
+{
+  "interrupted": true,
+  "checkpoint": "scripts/tgn_rl_blocking.pt",
+  "completed_epochs": [
+    1,
+    2
+  ],
+  "interrupted_during_epoch": 3,
+  "next_epoch": 3,
+  "best_epoch": 1,
+  "best_val_block_rate": 0.09156215614705784,
+  "stall": 1,
+  "patience": 3,
+  "max_epochs": 20,
+  "optimizer_saved": false,
+  "resume_command": "python scripts/tgn_rl_blocking.py --resume",
+  "note": "Epoch 3 was stopped before validation. The resume already ran and that round finished by early stop. Do not run the resume command again. Final numbers are in scripts/tgn_rl_blocking_results.json. The later force-fill run is scripts/tgn_rl_fillk_results.json."
+}

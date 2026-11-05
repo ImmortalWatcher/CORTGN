@@ -1,0 +1,86 @@
+{
+  "protocol": {
+    "role": "甲",
+    "model": "TGN/GRU memory + REINFORCE sequential blocking",
+    "window": "time:1h",
+    "k": 5,
+    "seed": 3074,
+    "split": "cascade-level 70/15/15 stratified by label",
+    "n_ids": {
+      "train": 3264,
+      "val": 698,
+      "test": 702
+    },
+    "n_usable": {
+      "train": 2960,
+      "val_rumor": 305,
+      "test_rumor": 311
+    },
+    "shaping": true,
+    "ancestor_feature": true,
+    "skip_blocked_descendants": true,
+    "use_outdegree": true,
+    "batch_size": 8,
+    "bptt_chunk": 1536,
+    "max_epochs": 20,
+    "patience": 3,
+    "no_old_checkpoint": true,
+    "feature_scale": "outdegree is log1p; memory init uses MiniTGN's 3 features"
+  },
+  "published_test_baseline": {
+    "outdegree_obs": 0.11190677863745141,
+    "greedy_oracle": 0.16007058774168714
+  },
+  "best_epoch": 1,
+  "best_val_block_rate": 0.09156215614705784,
+  "history": [
+    {
+      "epoch": 1,
+      "alpha": 1.0,
+      "train_block_rate": 0.054991,
+      "val_block_rate": 0.091562,
+      "val_outdegree": 0.106316,
+      "val_oracle": 0.154377
+    },
+    {
+      "epoch": 2,
+      "alpha": 0.9473684210526315,
+      "train_block_rate": 0.064399,
+      "val_block_rate": 0.091562,
+      "val_outdegree": 0.106316,
+      "val_oracle": 0.154377
+    },
+    {
+      "epoch": 3,
+      "alpha": 0.8947368421052632,
+      "train_block_rate": 0.0638186931853481,
+      "train_return": 0.12091962919329097,
+      "mean_decisions": 93.44087837837837,
+      "seconds": 1345.3222944000154,
+      "val_block_rate": 0.09156215614705784,
+      "val_outdegree": 0.10631553049014116,
+      "val_oracle": 0.154377266151477,
+      "val_seconds": 15.31452270000591
+    },
+    {
+      "epoch": 4,
+      "alpha": 0.8421052631578947,
+      "train_block_rate": 0.06369108087589376,
+      "train_return": 0.11732567529769908,
+      "mean_decisions": 104.20641891891891,
+      "seconds": 1893.7331110999803,
+      "val_block_rate": 0.0,
+      "val_outdegree": 0.10631553049014116,
+      "val_oracle": 0.154377266151477,
+      "val_seconds": 39.63064960000338
+    }
+  ],
+  "test_rumor": {
+    "n": 311,
+    "model": 0.09429426498725504,
+    "outdegree_obs": 0.11190677863745141,
+    "greedy_oracle": 0.16007058774168714,
+    "leakage_void": false,
+    "meets_success_line": false
+  }
+}

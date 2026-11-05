@@ -1,6 +1,6 @@
 # Agent 进度入口
 
-最后更新：2026-10-21。下一个 agent 先读 [docs/AGENT_HANDOFF_2026-10-21.md](AGENT_HANDOFF_2026-10-21.md)，再读本文件第 2–4 节。不要从聊天记录重建结论。交接文档覆盖下面第 5 节的旧动作，也覆盖 `docs/next_steps_blocking_and_intervention.md` 第 2.2 节「先 MLP 再接 GRU」的顺序。
+最后更新：2026-11-05。下一个 agent 先读 [docs/AGENT_HANDOFF_2026-10-21.md](AGENT_HANDOFF_2026-10-21.md)，再读本文件第 2 节和第 6 节。不要从聊天记录重建结论。交接文档覆盖下面第 5 节的旧动作，也覆盖 `docs/next_steps_blocking_and_intervention.md` 第 2.2 节「先 MLP 再接 GRU」的顺序。甲的两轮序贯训练以第 6 节为准。
 
 ## 1. 项目是什么
 
@@ -15,6 +15,7 @@
 - 协议：观察窗口之后选 \(k\) 个非根节点，切掉其未来子树。主指标 `block_rate`。种子 3074。
 - 全量谣言、\(k=5\)：1h 出度 10.6% / oracle 15.5%；6h 出度 13.3% / oracle 22.9%。
 - 测试集谣言：1h \(k=5\) MiniTGN 11.33% / 出度 11.19% / oracle 16.01%；6h MiniTGN 13.75% / 出度 14.37% / oracle 24.75%。MiniTGN 没有形成可用增益。不要续训 `scripts/tgn_blocking.pt`。
+- 甲的两轮 REINFORCE 见第 6 节。当前最好是「窗口结束补满名额」：测试谣言 11.50% / 出度 11.19% / oracle 16.01%。超过出度 0.31 个百分点，未到 12.2% 及格线。不要续训 `scripts/tgn_rl_blocking.pt` 或 `scripts/tgn_rl_fillk.pt`。
 - 文本检测轮次：`src/text_training_round_metrics.md`，AUC 约 0.53–0.56。不能当作辟谣门控。
 
 ## 3. 2026-10-19 本次完成
@@ -54,3 +55,23 @@
 3. 丁等甲的配置接口，再跑三组消融和 6h 迁移。
 
 未收到导师要求前，不要做用户级大图上的 SandIMIN 复现，不要跑 ED2D 的 LLM 辩论。
+
+2026-11-05 对甲的补充：第 6 节的两轮已经跑完。下一版如果继续做甲，只把出度特征改成 1 小时结束时的出度，保留窗口结束补满名额，用新的 `--tag` 另存，不要和别的改动混在同一次训练里。乙、丙仍分开做。丁和 6 小时窗口等主结果到及格线后再做。
+
+## 6. 甲：TGN 记忆 + REINFORCE，2026-10-22 至 2026-10-29
+
+脚本是 `scripts/tgn_rl_blocking.py`。一棵转发树是一局。每来一条观察窗口内的转发，就用 GRU 更新边两端的记忆，再给还能选的非根节点打分。训练时抽样，验证和测试时取最高分。根帖不能拦。已经拦过的人，其观察窗口内的下游不再参与选择。奖励是最终 `block_rate`；训练时有随轮次衰减的奖励塑形，验证和测试不用。早停看验证集谣言阻断比例，耐心 3，最多 20 轮。超过 1536 步的树分段反传。权重 `*.pt` 和日志 `*.log` 不进 Git。
+
+通俗说明：
+
+- 第一轮，每一步都可以跳过：[docs/tgn_rl_blocking_summary_zh.md](tgn_rl_blocking_summary_zh.md)
+- 第二轮，窗口结束必须补满剩余名额：[docs/tgn_rl_fillk_summary_zh.md](tgn_rl_fillk_summary_zh.md)
+
+| 版本 | 最好验证轮 | 验证谣言 | 测试谣言 | 测试平均选中人数 | 相对出度 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 可以一直跳过 | 1 | 9.16% | 9.43% | 2.76 / 5 | 低于 11.19% |
+| 窗口结束补满名额 | 5 | 10.96% | 11.50% | 4.57 / 5 | 高于 11.19%，未到 12.2% |
+
+两轮的测试 oracle 都是 16.01%，`leakage_void` 都是 false。第二轮验证集从第 2 轮起高于验证出度 10.63%，第 5 轮最高 10.96%；第 6–8 轮掉到 10.00% 后早停。测试加载的是第 5 轮权重。
+
+结果文件：`scripts/tgn_rl_blocking_results.json`、`scripts/tgn_rl_selection_counts.json`、`scripts/tgn_rl_fillk_results.json`、`scripts/tgn_rl_fillk_selection_counts.json`。本机权重是 `scripts/tgn_rl_blocking.pt`（第 1 轮）和 `scripts/tgn_rl_fillk.pt`（第 5 轮）。
