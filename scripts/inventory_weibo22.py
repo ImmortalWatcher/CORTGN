@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WEIBO22 = ROOT / "weibo22"
 POSTS_DIR = WEIBO22 / "posts" / "Weibo"
 EVENTS = WEIBO22 / "events.txt"
-OUT_JSON = ROOT / "scripts" / "weibo22_inventory.json"
+OUT_JSON = ROOT / "results" / "weibo22_inventory.json"
 
 
 def percentile(xs: list[float], p: float) -> float:
@@ -305,6 +305,7 @@ def main() -> None:
             "id_overlap_caveat": "DAMMFND CSV 的 post_id 常为 float/科学计数法，16 位 mid 可能丢失精度，ID 交集偏低时以文本前 80 字交集为辅。",
         },
     }
+    OUT_JSON.parent.mkdir(exist_ok=True)
     OUT_JSON.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print("Wrote", OUT_JSON, flush=True)
 

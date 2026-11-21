@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-甲：TGN 记忆 + REINFORCE 序贯阻断。
+REINFORCE 序贯阻断：甲使用 TGN 记忆，乙只使用手算特征。
 
 一条转发到来时，用 GRU 更新这条边两端的记忆，再对「当前还能选的人」
 加上「这一步谁也不拦」一起做 softmax。名额用完或窗口走完即停。
@@ -12,7 +12,7 @@
 加总等于 block_rate，所以训练回报 = block_rate * (1 + alpha)。
 塑形只进训练奖励。验证和测试的 alpha 固定为 0。
 
-不读取 scripts/tgn_blocking.pt，也不改一次性回归那条训练。
+不读取 results/tgn_blocking.pt，也不改一次性回归那条训练。
 """
 
 from __future__ import annotations
@@ -34,7 +34,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from blocking_baseline import (  # noqa: E402
     MIN_FUTURE,
     POSTS_DIR,
+    RESULTS_DIR,
     SEED,
+    checkpoint_for_read,
     covered_future,
     load_labels,
     observed_future,
@@ -43,9 +45,9 @@ from blocking_baseline import (  # noqa: E402
 )
 from tgn_blocking import node_depth, stratified_split  # noqa: E402
 
-OUT_JSON = Path(__file__).resolve().parent / "tgn_rl_blocking_results.json"
-CKPT = Path(__file__).resolve().parent / "tgn_rl_blocking.pt"
-TRAIN_LOG = Path(__file__).resolve().parent / "tgn_rl_blocking_train.log"
+OUT_JSON = RESULTS_DIR / "tgn_rl_blocking_results.json"
+CKPT = RESULTS_DIR / "tgn_rl_blocking.pt"
+TRAIN_LOG = RESULTS_DIR / "tgn_rl_blocking_train.log"
 MEM_FEAT_DIM = 3
 POLICY_FEAT_DIM = 8
 BPTT_CHUNK = 1536
@@ -87,6 +89,23 @@ class TGNPolicy(nn.Module):
 
     def score(self, mem: torch.Tensor, extra: torch.Tensor) -> torch.Tensor:
         return self.scorer(torch.cat([mem, extra], dim=-1)).squeeze(-1)
+
+
+class FeaturePolicy(nn.Module):
+    def __init__(self, hidden: int = 64):
+        super().__init__()
+        self.hidden = hidden
+        self.scorer = nn.Sequential(
+            nn.Linear(POLICY_FEAT_DIM, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, 1),
+        )
+
+    def score(self, mem: None, extra: torch.Tensor) -> torch.Tensor:
+        return self.scorer(extra).squeeze(-1)
+
+
+Policy = TGNPolicy | FeaturePolicy
 
 
 @dataclass
@@ -249,7 +268,7 @@ def build_episodes(cas_map: dict[str, dict], ids: list[str], labels: dict[str, i
 
 
 def run_episode(
-    model: TGNPolicy,
+    model: Policy,
     ep: Episode,
     *,
     k: int,
@@ -276,10 +295,12 @@ def run_episode(
     grad_ctx = torch.enable_grad() if build_graph else torch.no_grad()
     traj = Trajectory()
     with grad_ctx:
-        feat = ep.feat.to(device)
-        init = model.feat_enc(feat)
-        mems = [init[i] for i in range(init.shape[0])]
-        log_dt_all = torch.tensor(ep.log_dt, dtype=torch.float32, device=device)
+        mems: list[torch.Tensor] = []
+        skip_mem = None
+        if isinstance(model, TGNPolicy):
+            mems = list(model.feat_enc(ep.feat.to(device)).unbind())
+            log_dt_all = torch.tensor(ep.log_dt, dtype=torch.float32, device=device)
+            skip_mem = model.skip_mem.unsqueeze(0)
         blocked: set[int] = set()
         selected: set[int] = set()
         covered: set[str] = set()
@@ -311,9 +332,10 @@ def run_episode(
             src = ep.edge_src[step_i]
             if src >= 0:
                 deg[src] += 1
-                ns, nd = model.edge_update(mems[src], mems[dst], log_dt_all[step_i : step_i + 1])
-                mems[src] = ns
-                mems[dst] = nd
+                if isinstance(model, TGNPolicy):
+                    ns, nd = model.edge_update(mems[src], mems[dst], log_dt_all[step_i : step_i + 1])
+                    mems[src] = ns
+                    mems[dst] = nd
             if dst in blocked:
                 dead[dst] = True
             elif not dead[dst]:
@@ -343,7 +365,7 @@ def run_episode(
                         math.exp(-(t_now - ep.hours[i])),
                     )
                 )
-            mem_rows = torch.stack([mems[i] for i in legal], dim=0)
+            mem_rows = torch.stack([mems[i] for i in legal], dim=0) if mems else None
             extra = torch.tensor(rows, dtype=torch.float32, device=device)
             skip_extra = torch.tensor(
                 [[0.0, t_now, 0.0, 0.0, 0.0, float(remaining), n_sel, 0.0]],
@@ -352,7 +374,7 @@ def run_episode(
             )
             logits = model.score(mem_rows, extra)
             if allow_skip:
-                skip_logit = model.score(model.skip_mem.unsqueeze(0), skip_extra)
+                skip_logit = model.score(skip_mem, skip_extra)
                 all_logits = torch.cat([logits, skip_logit.view(1)], dim=0)
             else:
                 all_logits = logits
@@ -429,9 +451,11 @@ def run_episode(
                             math.exp(-(t_end - ep.hours[i])),
                         )
                     )
-                mem_rows = torch.stack([mems[i] for i in legal], dim=0)
+                mem_rows = torch.stack([mems[i] for i in legal], dim=0) if mems else None
                 extra = torch.tensor(rows, dtype=torch.float32, device=device)
                 all_logits = model.score(mem_rows, extra)
+                if capture is not None:
+                    capture.append(all_logits.detach().cpu())
                 dist = torch.distributions.Categorical(logits=all_logits)
                 if fixed_choices is not None:
                     if made >= len(fixed_choices):
@@ -479,27 +503,6 @@ def run_episode(
     return traj
 
 
-def reinforce_loss(batch: list[Trajectory]) -> torch.Tensor:
-    ep_returns = []
-    ready: list[Trajectory] = []
-    for traj in batch:
-        if not traj.log_probs:
-            continue
-        traj.returns = reward_to_go(traj.step_rewards, traj.block_rate)
-        if len(traj.returns) != len(traj.log_probs):
-            raise RuntimeError("return length does not match decisions")
-        ep_returns.append(traj.returns[0])
-        ready.append(traj)
-    if not ready:
-        raise RuntimeError("batch has no decisions")
-    baseline = sum(ep_returns) / len(ep_returns)
-    terms = []
-    for traj in ready:
-        adv = [g - baseline for g in traj.returns]
-        terms.append(torch.stack([-lp * a for lp, a in zip(traj.log_probs, adv)]).mean())
-    return torch.stack(terms).mean()
-
-
 def rule_block_rate(episodes: list[Episode], strategy: str, k: int) -> float:
     if not episodes:
         return float("nan")
@@ -514,7 +517,7 @@ def rule_block_rate(episodes: list[Episode], strategy: str, k: int) -> float:
 
 @torch.no_grad()
 def policy_block_rate(
-    model: TGNPolicy,
+    model: Policy,
     episodes: list[Episode],
     *,
     k: int,
@@ -607,32 +610,27 @@ def self_check() -> None:
     log("self-check ok")
 
 
-def leakage_check(model: TGNPolicy, ep: Episode, window: str) -> None:
-    obs, fut = observed_future(ep.cas, window)
+def leakage_check(model: Policy, ep: Episode, args: argparse.Namespace) -> None:
+    obs, fut = observed_future(ep.cas, args.window)
     if set(ep.nids) != set(obs):
         raise RuntimeError("episode nodes are not exactly the observation window")
     if set(ep.nids) & set(fut):
         raise RuntimeError("future node entered the episode state")
-    was = model.training
-    model.eval()
     device = torch.device("cpu")
-    cpu_model = TGNPolicy(model.mem_dim, model.hidden)
+    cpu_model = TGNPolicy(model.mem_dim, model.hidden) if isinstance(model, TGNPolicy) else FeaturePolicy(model.hidden)
     cpu_model.load_state_dict(model.state_dict())
-    cpu_model.to(device).eval()
+    cpu_model.eval()
     kwargs = dict(
-        k=5,
+        **episode_kwargs(args, device),
         alpha=0.0,
         train=False,
-        use_outdegree=True,
-        ancestor_feature=True,
-        skip_blocked=True,
-        device=device,
         check_mask=True,
+        force_skip=args.force_fill and args.allow_skip,
     )
     first: list[torch.Tensor] = []
     run_episode(cpu_model, ep, capture=first, **kwargs)
-    shuffled = shuffle_future(ep.cas, window, random.Random(0))
-    ep2 = build_episode(shuffled, ep.label, window)
+    shuffled = shuffle_future(ep.cas, args.window, random.Random(0))
+    ep2 = build_episode(shuffled, ep.label, args.window)
     if ep2 is None:
         raise RuntimeError("shuffled cascade became unevaluable")
     second: list[torch.Tensor] = []
@@ -642,8 +640,6 @@ def leakage_check(model: TGNPolicy, ep: Episode, window: str) -> None:
     for i, (a, b) in enumerate(zip(first, second)):
         if a.shape != b.shape or not torch.allclose(a, b, atol=1e-5, rtol=1e-4):
             raise RuntimeError(f"action logits changed at step {i} after shuffling the future")
-    if was:
-        model.train()
     log(f"leakage-check ok on {ep.cid} ({len(first)} decisions)")
 
 
@@ -665,7 +661,7 @@ def check_published_baselines(test_rumor: list[Episode], window: str, k: int) ->
 
 
 def save_ckpt(
-    model: TGNPolicy,
+    model: Policy,
     epoch: int,
     val_rate: float,
     args: argparse.Namespace,
@@ -703,7 +699,7 @@ def episode_kwargs(args: argparse.Namespace, device: torch.device) -> dict:
 
 
 def train_epoch(
-    model: TGNPolicy,
+    model: Policy,
     opt: Adam,
     episodes: list[Episode],
     *,
@@ -795,7 +791,7 @@ def train_epoch(
     }
 
 
-def selection_summary(model: TGNPolicy, episodes: list[Episode], args: argparse.Namespace, device: torch.device) -> dict:
+def selection_summary(model: Policy, episodes: list[Episode], args: argparse.Namespace, device: torch.device) -> dict:
     """数现有策略在贪心决定下实际拦了几个人。不改权重。"""
     if not episodes:
         return {"n": 0}
@@ -858,61 +854,25 @@ def evaluate_split(model, episodes, args, device) -> dict[str, float]:
     }
 
 
-def _time_full_pass(model, opt, ep, args, device) -> str:
-    """Always skip, so the whole window is differentiated. This is the slow path."""
-    if device.type == "cuda":
-        torch.cuda.reset_peak_memory_stats(device)
-        torch.cuda.empty_cache()
-    opt.zero_grad(set_to_none=True)
-    t0 = time.perf_counter()
-    try:
-        traj = run_episode(
-            model,
-            ep,
-            k=args.k,
-            alpha=0.0,
-            train=True,
-            use_outdegree=args.use_outdegree,
-            ancestor_feature=args.ancestor_feature,
-            skip_blocked=args.skip_blocked_descendants,
-            device=device,
-            force_skip=True,
-        )
-        # Two copies make a non-zero baseline without a second full window.
-        twin = Trajectory(log_probs=list(traj.log_probs), step_rewards=list(traj.step_rewards), block_rate=traj.block_rate + 0.01)
-        loss = reinforce_loss([traj, twin])
-        loss.backward()
-        opt.step()
-        opt.zero_grad(set_to_none=True)
-        sec = time.perf_counter() - t0
-        mem = ""
-        if device.type == "cuda":
-            mem = f" peak_gb {torch.cuda.max_memory_allocated(device) / 1024**3:.2f}"
-        return f"obs {len(ep.arrivals)} decisions {len(traj.log_probs)} {sec:.1f}s{mem}"
-    except RuntimeError as exc:
-        opt.zero_grad(set_to_none=True)
-        if device.type == "cuda":
-            torch.cuda.empty_cache()
-        return f"obs {len(ep.arrivals)} FAILED {exc}"
-
-
-def smoke_time(model, episodes, args, device) -> None:
-    if not episodes:
-        raise RuntimeError("no training episodes to time")
+def smoke_time(model: Policy, episodes: list[Episode], args: argparse.Namespace, device: torch.device) -> None:
     ranked = sorted(episodes, key=lambda ep: len(ep.arrivals))
+    indices = sorted({round(p * (len(ranked) - 1)) for p in (0.50, 0.90, 0.99, 1.0)})
+    sample = [ranked[i] for i in indices]
+    log(f"smoke sample {[(ep.cid, len(ep.arrivals)) for ep in sample]}")
     opt = Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
-    model.train()
-    picks = {
-        "p50": ranked[len(ranked) // 2],
-        "p90": ranked[min(len(ranked) - 1, int(0.90 * (len(ranked) - 1)))],
-        "p99": ranked[min(len(ranked) - 1, int(0.99 * (len(ranked) - 1)))],
-        "max": ranked[-1],
-    }
-    seconds = {}
-    for name, ep in picks.items():
-        msg = _time_full_pass(model, opt, ep, args, device)
-        log(f"smoke full-window {name} {ep.cid} {msg}")
-        seconds[name] = msg
+    start = time.perf_counter()
+    train_epoch(
+        model, opt, sample, args=args, alpha=alpha_for_epoch(1, args.epochs, args.shaping), epoch=1, device=device,
+    )
+    if device.type == "mps":
+        torch.mps.synchronize()
+    elif device.type == "cuda":
+        torch.cuda.synchronize(device)
+    if not opt.state:
+        raise RuntimeError("smoke did not complete an optimizer update")
+    log(f"smoke train {time.perf_counter() - start:.2f}s")
+    metrics = evaluate_split(model, sample, args, device)
+    log(f"smoke eval {metrics['seconds']:.2f}s block {metrics['model']:.4%}")
 
 
 def write_results(payload: dict) -> None:
@@ -925,14 +885,15 @@ def apply_tag(tag: str) -> None:
     if not tag:
         return
     safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in tag)
-    base = Path(__file__).resolve().parent
-    OUT_JSON = base / f"tgn_rl_{safe}_results.json"
-    CKPT = base / f"tgn_rl_{safe}.pt"
-    TRAIN_LOG = base / f"tgn_rl_{safe}_train.log"
+    OUT_JSON = RESULTS_DIR / f"tgn_rl_{safe}_results.json"
+    CKPT = RESULTS_DIR / f"tgn_rl_{safe}.pt"
+    TRAIN_LOG = RESULTS_DIR / f"tgn_rl_{safe}_train.log"
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="甲：TGN 记忆 + REINFORCE 序贯阻断")
+    parser = argparse.ArgumentParser(description="REINFORCE 序贯阻断：甲使用 TGN 记忆，乙只使用手算特征")
+    parser.add_argument("--policy", choices=("tgn", "features"), default="tgn")
+    parser.add_argument("--device", choices=("auto", "cpu", "mps", "cuda"), default="auto")
     parser.add_argument("--window", default="time:1h")
     parser.add_argument("--k", type=int, default=5)
     parser.add_argument("--epochs", type=int, default=20)
@@ -950,21 +911,29 @@ def main() -> None:
     parser.add_argument("--force-fill", action="store_true", help="窗口走完后把没花掉的名额按模型分数补满")
     parser.add_argument("--tag", default="", help="非空时结果、权重和日志改写到 tgn_rl_<tag>.*，避免覆盖上一轮")
     parser.add_argument("--count-selected", action="store_true", help="只统计已有权重实际拦了几个人")
-    parser.add_argument("--smoke", type=int, default=0, help="非 0 时只做自检、基线回放和耗时估计")
+    parser.add_argument("--smoke", type=int, default=0, help="非 0 时回放基线，并对少量真实级联试训和评估")
     parser.add_argument("--eval-only", action="store_true")
     parser.add_argument("--resume", action="store_true", help="从 tgn_rl_blocking.pt 的 next_epoch 接着训")
     parser.add_argument("--ckpt", default="")
     args = parser.parse_args()
+    if args.policy == "features" and not args.tag:
+        args.tag = "rl_only"
     apply_tag(args.tag)
+    RESULTS_DIR.mkdir(exist_ok=True)
     if args.batch_size < 2:
         raise SystemExit("batch size must be at least 2 so the return baseline is not identically zero")
 
+    available = {"cuda": torch.cuda.is_available(), "mps": torch.backends.mps.is_available(), "cpu": True}
+    if args.device == "auto":
+        args.device = next(name for name, usable in available.items() if usable)
+    elif not available[args.device]:
+        parser.error(f"requested device {args.device} is unavailable in this PyTorch session")
+    device = torch.device(args.device)
     random.seed(args.seed)
     torch.manual_seed(args.seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    log(f"device {device} window {args.window} k {args.k} seed {args.seed} allow_skip {args.allow_skip} force_fill {args.force_fill} tag {args.tag or '-'}")
+    log(f"policy {args.policy} device {device} window {args.window} k {args.k} seed {args.seed} allow_skip {args.allow_skip} force_fill {args.force_fill} tag {args.tag or '-'}")
     self_check()
 
     log("Loading cascades ...")
@@ -992,30 +961,30 @@ def main() -> None:
     if not train_eps:
         raise RuntimeError("no usable training episodes")
     published = check_published_baselines(test_eps, args.window, args.k)
-    model = TGNPolicy(args.mem_dim, args.hidden)
-    leakage_ep = min(train_eps, key=lambda ep: len(ep.arrivals))
-    leakage_check(model, leakage_ep, args.window)
+    model = TGNPolicy(args.mem_dim, args.hidden) if args.policy == "tgn" else FeaturePolicy(args.hidden)
+    leakage_ep = sorted(train_eps, key=lambda ep: len(ep.arrivals))[len(train_eps) // 2]
+    leakage_check(model, leakage_ep, args)
+    model.to(device)
     if args.smoke:
-        model.to(device)
         smoke_time(model, train_eps, args, device)
-        log("smoke done, training not started")
+        log("smoke done, no checkpoint or formal results written")
         return
 
-    model.to(device)
-    if args.ckpt:
-        ckpt = torch.load(args.ckpt, map_location=device, weights_only=False)
+    if args.eval_only or args.count_selected:
+        checkpoint_path = checkpoint_for_read(Path(args.ckpt) if args.ckpt else CKPT)
+        if not checkpoint_path.is_file():
+            raise SystemExit(f"checkpoint not found: {checkpoint_path}")
+        ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
         model.load_state_dict(ckpt["model"])
-        log(f"loaded {args.ckpt}")
-    elif (args.eval_only or args.count_selected) and CKPT.exists():
-        ckpt = torch.load(CKPT, map_location=device, weights_only=False)
-        model.load_state_dict(ckpt["model"])
-        log(f"loaded {CKPT.name}")
+        log(f"loaded {checkpoint_path}")
 
     if args.count_selected:
         val_stats = selection_summary(model, val_eps, args, device)
         test_stats = selection_summary(model, test_eps, args, device)
         payload = {
-            "checkpoint": str(CKPT),
+            "checkpoint": str(checkpoint_path),
+            "policy": args.policy,
+            "device": args.device,
             "k": args.k,
             "window": args.window,
             "val_rumor": val_stats,
@@ -1024,7 +993,7 @@ def main() -> None:
         if args.tag:
             out = CKPT.with_name(CKPT.stem + "_selection_counts.json")
         else:
-            out = Path(__file__).resolve().parent / "tgn_rl_selection_counts.json"
+            out = RESULTS_DIR / "tgn_rl_selection_counts.json"
         out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         log(
             f"val selected mean {val_stats['mean_selected']:.2f} "
@@ -1062,11 +1031,13 @@ def main() -> None:
     history: list = []
     start_epoch = 1
     if args.resume or args.ckpt:
-        resume_path = Path(args.ckpt) if args.ckpt else CKPT
-        resume_ckpt = torch.load(resume_path, map_location=device, weights_only=False)
+        resume_path = checkpoint_for_read(Path(args.ckpt) if args.ckpt else CKPT)
+        resume_ckpt = torch.load(resume_path, map_location="cpu", weights_only=False)
         model.load_state_dict(resume_ckpt["model"])
         log(f"loaded {resume_path}")
         if args.resume:
+            if not CKPT.exists():
+                torch.save(resume_ckpt, CKPT)
             best = float(resume_ckpt.get("val_block_rate", -1.0))
             best_epoch = int(resume_ckpt.get("best_epoch", resume_ckpt.get("epoch", 0)))
             stall = int(resume_ckpt.get("stall", 0))
@@ -1133,7 +1104,7 @@ def main() -> None:
                 log("early stop")
                 break
 
-    ckpt = torch.load(CKPT, map_location=device, weights_only=False)
+    ckpt = torch.load(CKPT, map_location="cpu", weights_only=False)
     model.load_state_dict(ckpt["model"])
     test_metrics = evaluate_split(model, test_eps, args, device)
     void = test_metrics["model"] > ORACLE_1H_K5 + 1e-4 or test_metrics["model"] > test_metrics["greedy_oracle"] + 1e-4
@@ -1161,9 +1132,12 @@ def main() -> None:
 
 
 def protocol_dict(args, train_ids, val_ids, test_ids, train_eps, val_eps, test_eps) -> dict:
+    uses_memory = args.policy == "tgn"
     return {
-        "role": "甲",
-        "model": "TGN/GRU memory + REINFORCE sequential blocking",
+        "role": "甲" if uses_memory else "乙",
+        "model": "TGN/GRU memory + REINFORCE sequential blocking" if uses_memory else "Handcrafted features + REINFORCE sequential blocking",
+        "policy": args.policy,
+        "device": args.device,
         "window": args.window,
         "k": args.k,
         "seed": args.seed,
@@ -1181,7 +1155,7 @@ def protocol_dict(args, train_ids, val_ids, test_ids, train_eps, val_eps, test_e
         "max_epochs": args.epochs,
         "patience": args.patience,
         "no_old_checkpoint": True,
-        "feature_scale": "outdegree is log1p; memory init uses MiniTGN's 3 features",
+        "feature_scale": "outdegree is log1p; memory init uses MiniTGN's 3 features" if uses_memory else "outdegree is log1p",
     }
 
 

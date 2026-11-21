@@ -65,7 +65,7 @@ def main() -> None:
         "examples": examples,
     }
     print(json.dumps(out, ensure_ascii=False, indent=2))
-    inv = ROOT / "scripts" / "weibo22_inventory.json"
+    inv = ROOT / "results" / "weibo22_inventory.json"
     report = json.loads(inv.read_text(encoding="utf-8"))
     report["overlap"]["data"]["root_prefix12_20_hit"] = hit_root
     inv.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

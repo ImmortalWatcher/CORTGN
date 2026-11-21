@@ -67,12 +67,12 @@
 
 | 文件 | 内容 |
 | --- | --- |
-| `scripts/tgn_rl_fillk_results.json` | 这一版的协议、8 轮记录和测试结果 |
-| `scripts/tgn_rl_fillk_selection_counts.json` | 第 5 轮权重实际拦了几个人 |
-| `scripts/tgn_rl_fillk.pt` | 第 5 轮权重。`.pt` 不进 Git，只留在本机 |
-| `scripts/tgn_rl_fillk_train.log` | 训练日志。`.log` 不进 Git |
-| `scripts/tgn_rl_blocking_results.json` | 上一轮可以一直跳过的结果，测试 9.43% |
-| `scripts/tgn_rl_selection_counts.json` | 上一轮的人数统计 |
+| `results/tgn_rl_fillk_results.json` | 这一版的协议、8 轮记录和测试结果 |
+| `results/tgn_rl_fillk_selection_counts.json` | 第 5 轮权重实际拦了几个人 |
+| `results/tgn_rl_fillk.pt` | 第 5 轮权重。`.pt` 不进 Git，只留在本机 |
+| `results/tgn_rl_fillk_train.log` | 训练日志。`.log` 不进 Git |
+| `results/tgn_rl_blocking_results.json` | 上一轮可以一直跳过的结果，测试 9.43% |
+| `results/tgn_rl_selection_counts.json` | 上一轮的人数统计 |
 | `docs/tgn_rl_blocking_summary_zh.md` | 上一轮说明 |
 
 ## 接下来
