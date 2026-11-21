@@ -3,7 +3,7 @@
 - 日期：2026-09-19
 - 仓库：https://github.com/ImmortalWatcher/CORTGN
 - 对应代码：`scripts/blocking_baseline.py`、`scripts/tgn_blocking.py`
-- 对应数字：`scripts/blocking_baseline_results.json`、`scripts/tgn_blocking_results.json`
+- 对应数字：`results/blocking_baseline_results.json`、`results/tgn_blocking_results.json`
 
 本报告记录第一轮**时序图谣言级联动态阻断**实验：数据盘点、非学习基线，以及最小 TGN 是否超过观察出度。不是 DAMMFND 复现报告。论文若用到 DAMMFND，按文献引用即可。
 
@@ -30,7 +30,7 @@ weibo22/events.txt              # eid + label，约 64MB
 weibo22/posts/Weibo/<eid>.json  # 4664 棵树
 ```
 
-盘点（`scripts/weibo22_inventory.json`）：
+盘点（`results/weibo22_inventory.json`）：
 
 | 项目 | 数值 |
 | --- | --- |
@@ -141,7 +141,7 @@ weibo22/posts/Weibo/<eid>.json  # 4664 棵树
 ```text
 python scripts/inventory_weibo22.py
 python scripts/blocking_baseline.py
-python scripts/tgn_blocking.py --epochs 5 --resume scripts/tgn_blocking.pt --eval-only
+python scripts/tgn_blocking.py --epochs 5 --resume results/tgn_blocking.pt --eval-only
 ```
 
 权重 `*.pt` 不入库（体积小但属本地产物）。续训或只评估时用本地 checkpoint。weibo22 约 4GB，克隆仓库需要相应磁盘和时间。

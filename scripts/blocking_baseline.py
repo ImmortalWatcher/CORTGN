@@ -35,10 +35,11 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+RESULTS_DIR = ROOT / "results"
 POSTS_DIR = ROOT / "weibo22" / "posts" / "Weibo"
 EVENTS = ROOT / "weibo22" / "events.txt"
-OUT_JSON = ROOT / "scripts" / "blocking_baseline_results.json"
-OUT_CSV = ROOT / "scripts" / "blocking_baseline_results.csv"
+OUT_JSON = RESULTS_DIR / "blocking_baseline_results.json"
+OUT_CSV = RESULTS_DIR / "blocking_baseline_results.csv"
 
 SEED = 3074
 K_LIST = (1, 5, 10)
@@ -48,6 +49,19 @@ RANDOM_REPS = 5
 TIME_WINDOWS_H = (("time:1h", 1.0), ("time:6h", 6.0), ("time:24h", 24.0))
 PREFIX_WINDOWS = (("prefix:20", 20), ("prefix:50", 50))
 STRATEGIES = ("random", "earliest", "followers", "outdegree_obs", "greedy_oracle")
+
+
+def checkpoint_for_read(path: Path) -> Path:
+    """Find a checkpoint saved before or after moving outputs to results/."""
+    if path.is_file():
+        return path
+    sibling_directories = {RESULTS_DIR: ROOT / "scripts", ROOT / "scripts": RESULTS_DIR}
+    other_dir = sibling_directories.get(path.parent.resolve())
+    if other_dir is not None:
+        alternate = other_dir / path.name
+        if alternate.is_file():
+            return alternate
+    return path
 
 
 def load_labels() -> dict[str, int]:
@@ -314,6 +328,7 @@ def main() -> None:
                             f"{w},{k},{strat},{split},{cell['n']},{cell['mean']},{cell['median']}"
                         )
 
+    RESULTS_DIR.mkdir(exist_ok=True)
     OUT_JSON.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     OUT_CSV.write_text("\n".join(csv_rows) + "\n", encoding="utf-8")
     print("Wrote", OUT_JSON)

@@ -39,7 +39,7 @@ VLDB 论文的引理 2：固定预算上的近似，推不出「达到阈值所�
 - 阈值用未来节点比例 \(\eta\in\{0.10, 0.15, 0.20\}\)，不是论文里的绝对期望人数。树大小差两个数量级，绝对人数不可比。
 - 候选仍是观察窗口内的非根节点。选中 \(v\) 后，把 \(v\) 的观察子树中的其他候选标成冗余，边际增益按「尚未覆盖的未来节点」重算。这是论文 Heur-BM 的边际更新，在树上是精确的，不需要 CP sequence。
 - 策略：`outdegree_obs` 的贪心版、`followers` 的贪心版、`greedy_oracle`。oracle 只作上界。
-- 输出 `scripts/blocking_bm_results.json`：每组窗口 × \(\eta\) × 策略，报平均 \(\lvert B\rvert\)、达标率、达标时的 block_rate。若候选耗尽仍未达标，\(\lvert B\rvert\) 记为候选人数并记 `met=false`。
+- 输出 `results/blocking_bm_results.json`：每组窗口 × \(\eta\) × 策略，报平均 \(\lvert B\rvert\)、达标率、达标时的 block_rate。若候选耗尽仍未达标，\(\lvert B\rvert\) 记为候选人数并记 `met=false`。
 - 窗口先跑 `time:1h` 和 `time:6h`，谣言与非谣言分开。
 
 完成标准：一张表能回答「1 小时内要把谣言未来传播压下 10%，出度贪心平均要删几个点，离 oracle 还差几个」。这一步半天到一天，给后面的 RL 提供第二个奖励。
@@ -64,7 +64,7 @@ VLDB 论文的引理 2：固定预算上的近似，推不出「达到阈值所�
 
 - 第一版用 REINFORCE，价值基线是同一 batch 的平均回报。动作是对变长候选打分后 softmax。网络用两层 MLP，隐藏维 64，输入就是上面的特征向量。先不要接 MiniTGN 的 GRU。若 MLP 已经超过出度，再把 GRU 记忆接回去做消融。
 - 对照必须同时跑，写进同一个 json：`random`、`outdegree_obs`、`greedy_oracle`、MLP 回归未来子树再 top-\(k\)（ListMLE 或 pairwise hinge，二选一）、REINFORCE。回归对照用来区分「换了排序损失就够」和「必须序贯决策」。
-- 训练预算：最多 20 个 epoch，按验证集谣言 block_rate 早停，连续 3 个 epoch 不升就停。日志写 `scripts/rl_blocking_train.log`，结果写 `scripts/rl_blocking_results.json`。
+- 训练预算：最多 20 个 epoch，按验证集谣言 block_rate 早停，连续 3 个 epoch 不升就停。日志写 `results/rl_blocking_train.log`，结果写 `results/rl_blocking_results.json`。
 - 设备沿用现有 CUDA 路径。每棵树只编码观察窗口内的候选，不做 128 条边的截断 BPTT。
 
 ### 2.3 消融（主结果出来之后再跑）
@@ -93,7 +93,7 @@ DAMMFND 多模态与 weibo22 仍不对齐。检测门控在对齐完成前用 we
 
 把用户在多棵树之间的转发收成有向图（盘点约 286 万独立用户），\(p(u,v)=1/\mathrm{in\text{-}degree}(v)\)，种子用谣言根用户。调用 https://github.com/jhwang0116/IMIN_BM 的 Heur-IMIN 与 App-BM+，不在本仓库重写 CP-Gen、LRR 和鞅停止条件。
 
-这张表的指标是论文的 \(D(B)\) 或 \(\lvert B\rvert\)，与树协议 `block_rate` 分开保存，例如 `scripts/user_graph_imin_results.json`。微博树是单父节点，\(D_L=D=D_U\)，在单棵树上重写 SandIMIN 没有算法收益。
+这张表的指标是论文的 \(D(B)\) 或 \(\lvert B\rvert\)，与树协议 `block_rate` 分开保存，例如 `results/user_graph_imin_results.json`。微博树是单父节点，\(D_L=D=D_U\)，在单棵树上重写 SandIMIN 没有算法收益。
 
 ## 5. 建议的执行顺序
 

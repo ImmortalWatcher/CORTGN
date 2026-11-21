@@ -30,7 +30,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from blocking_baseline import (  # noqa: E402
     MIN_FUTURE,
     POSTS_DIR,
+    RESULTS_DIR,
     SEED,
+    checkpoint_for_read,
     covered_future,
     future_in_subtree,
     load_labels,
@@ -39,10 +41,10 @@ from blocking_baseline import (  # noqa: E402
     pick,
 )
 
-OUT_JSON = Path(__file__).resolve().parent / "tgn_blocking_results.json"
-CKPT = Path(__file__).resolve().parent / "tgn_blocking.pt"
-TRAIN_LOG = Path(__file__).resolve().parent / "tgn_train.log"
-RESUME_DEFAULT = Path(__file__).resolve().parent / "tgn_blocking_epoch2_interrupted.pt"
+OUT_JSON = RESULTS_DIR / "tgn_blocking_results.json"
+CKPT = RESULTS_DIR / "tgn_blocking.pt"
+TRAIN_LOG = RESULTS_DIR / "tgn_train.log"
+RESUME_DEFAULT = RESULTS_DIR / "tgn_blocking_epoch2_interrupted.pt"
 
 
 def log(msg: str) -> None:
@@ -316,6 +318,7 @@ def main() -> None:
         help="skip remaining epochs and evaluate the resume/best checkpoint",
     )
     args = parser.parse_args()
+    RESULTS_DIR.mkdir(exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     rng = random.Random(SEED)
     torch.manual_seed(SEED)
@@ -340,11 +343,11 @@ def main() -> None:
     history = []
     start_epoch = 1
 
-    resume_path = Path(args.resume) if args.resume else None
-    if resume_path is None and RESUME_DEFAULT.exists() and not args.eval_only:
-        resume_path = RESUME_DEFAULT
-    if resume_path is None and args.eval_only and CKPT.exists():
-        resume_path = CKPT
+    resume_path = checkpoint_for_read(Path(args.resume)) if args.resume else None
+    if resume_path is None:
+        default_path = checkpoint_for_read(CKPT if args.eval_only else RESUME_DEFAULT)
+        if default_path.is_file():
+            resume_path = default_path
     if resume_path is not None:
         ckpt0 = torch.load(resume_path, map_location=device, weights_only=False)
         model.load_state_dict(ckpt0["model"])

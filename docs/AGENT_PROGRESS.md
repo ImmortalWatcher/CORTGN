@@ -1,6 +1,6 @@
 # Agent 进度入口
 
-最后更新：2026-11-05。下一个 agent 先读 [docs/AGENT_HANDOFF_2026-10-21.md](AGENT_HANDOFF_2026-10-21.md)，再读本文件第 2 节和第 6 节。不要从聊天记录重建结论。交接文档覆盖下面第 5 节的旧动作，也覆盖 `docs/next_steps_blocking_and_intervention.md` 第 2.2 节「先 MLP 再接 GRU」的顺序。甲的两轮序贯训练以第 6 节为准。
+最后更新：2026-11-21。下一个 agent 先读 [docs/AGENT_HANDOFF_2026-10-21.md](AGENT_HANDOFF_2026-10-21.md)，再读本文件第 2 节和第 6 节。不要从聊天记录重建结论。交接文档覆盖下面第 5 节的旧动作，也覆盖 `docs/next_steps_blocking_and_intervention.md` 第 2.2 节「先 MLP 再接 GRU」的顺序。甲的两轮序贯训练以第 6 节为准。乙、丙的首轮对照结果见第 7 节。
 
 ## 1. 项目是什么
 
@@ -11,11 +11,11 @@
 书面报告：`docs/tgn_blocking_report.md`（2026-09-19）。
 
 - 数据 `weibo22/`：4664 棵树（非谣言 2351 / 谣言 2313），约 381 万节点。与 `data/` 里的 DAMMFND 多模态表没有实例级对齐。
-- 脚本：`scripts/blocking_baseline.py`、`scripts/tgn_blocking.py`。结果 json 在 `scripts/blocking_baseline_results.json`、`scripts/tgn_blocking_results.json`。
+- 脚本：`scripts/blocking_baseline.py`、`scripts/tgn_blocking.py`。结果 json 在 `results/blocking_baseline_results.json`、`results/tgn_blocking_results.json`。
 - 协议：观察窗口之后选 \(k\) 个非根节点，切掉其未来子树。主指标 `block_rate`。种子 3074。
 - 全量谣言、\(k=5\)：1h 出度 10.6% / oracle 15.5%；6h 出度 13.3% / oracle 22.9%。
-- 测试集谣言：1h \(k=5\) MiniTGN 11.33% / 出度 11.19% / oracle 16.01%；6h MiniTGN 13.75% / 出度 14.37% / oracle 24.75%。MiniTGN 没有形成可用增益。不要续训 `scripts/tgn_blocking.pt`。
-- 甲的两轮 REINFORCE 见第 6 节。当前最好是「窗口结束补满名额」：测试谣言 11.50% / 出度 11.19% / oracle 16.01%。超过出度 0.31 个百分点，未到 12.2% 及格线。不要续训 `scripts/tgn_rl_blocking.pt` 或 `scripts/tgn_rl_fillk.pt`。
+- 测试集谣言：1h \(k=5\) MiniTGN 11.33% / 出度 11.19% / oracle 16.01%；6h MiniTGN 13.75% / 出度 14.37% / oracle 24.75%。MiniTGN 没有形成可用增益。不要续训 `results/tgn_blocking.pt`。
+- 甲的两轮 REINFORCE 见第 6 节。当前最好是「窗口结束补满名额」：测试谣言 11.50% / 出度 11.19% / oracle 16.01%。超过出度 0.31 个百分点，未到 12.2% 及格线。不要续训 `results/tgn_rl_blocking.pt` 或 `results/tgn_rl_fillk.pt`。
 - 文本检测轮次：`src/text_training_round_metrics.md`，AUC 约 0.53–0.56。不能当作辟谣门控。
 
 ## 3. 2026-10-19 本次完成
@@ -74,4 +74,18 @@
 
 两轮的测试 oracle 都是 16.01%，`leakage_void` 都是 false。第二轮验证集从第 2 轮起高于验证出度 10.63%，第 5 轮最高 10.96%；第 6–8 轮掉到 10.00% 后早停。测试加载的是第 5 轮权重。
 
-结果文件：`scripts/tgn_rl_blocking_results.json`、`scripts/tgn_rl_selection_counts.json`、`scripts/tgn_rl_fillk_results.json`、`scripts/tgn_rl_fillk_selection_counts.json`。本机权重是 `scripts/tgn_rl_blocking.pt`（第 1 轮）和 `scripts/tgn_rl_fillk.pt`（第 5 轮）。
+结果文件：`results/tgn_rl_blocking_results.json`、`results/tgn_rl_selection_counts.json`、`results/tgn_rl_fillk_results.json`、`results/tgn_rl_fillk_selection_counts.json`。本机权重是 `results/tgn_rl_blocking.pt`（第 1 轮）和 `results/tgn_rl_fillk.pt`（第 5 轮）。
+
+## 7. 乙、丙首轮对照，2026-11-21
+
+乙、丙已完成交接中各自的对照实验。沿用 `weibo22`、种子 3074 和级联级划分，两个窗口的预算都是 `k=5`。1 小时主表有 311 棵可评测试谣言树，6 小时有 285 棵。
+
+| 路线 | 最佳验证轮 | 1 小时验证 | 1 小时测试 | 6 小时测试 |
+| --- | ---: | ---: | ---: | ---: |
+| 乙，手算特征 + REINFORCE，窗口末补名额 | 7 | 11.18% | 11.88% | 未测 |
+| 丙，MiniTGN + 成对排序，窗口末一次选点 | 2 | 10.67% | 11.26% | 13.65% |
+
+乙在第 10 轮早停，1 小时比观察出度高 0.69 个百分点，仍低于 12.2% 的成功线。丙固定训练 5 轮，1 小时低于 12.2%，6 小时低于同窗口观察出度 14.37%。
+
+- 乙的训练经过和复现命令见 [乙线说明](tgn_rl_only_fillk_summary_zh.md)，逐轮记录和测试指标见 [乙线结果 JSON](../results/tgn_rl_rl_only_fillk_results.json)。
+- 丙的训练经过和复现命令见 [丙线说明](tgn_rank_summary_zh.md)，逐轮记录和测试指标见 [丙线结果 JSON](../results/tgn_rank_results.json)。1 小时主表在 `test_rumor`，两个窗口的结果在 `test_rumor_by_window`。
